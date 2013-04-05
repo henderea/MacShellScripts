@@ -1,0 +1,40 @@
+.\"Modified from man(1) of FreeBSD, the NetBSD mdoc.template, and mdoc.samples.
+.\"See Also:
+.\"man mdoc.samples for a complete listing of options
+.\"man mdoc for the short list of editing options
+.\"/usr/share/misc/mdoc.template
+.Dd May 14, 2012               \" DATE 
+.Os "Mac OS X" 10.7
+.Dt FSIZECOMP 1     \" Program name and manual section number 
+.Sh NAME                 \" Section Header - required - don't modify 
+.Nm fsizecomp
+.\" Use .Nm macro to designate other names for the documented program.
+.Nd Compares the file sizes of two files, getting the sizes by using the
+.Xr fsize 1
+bash script
+.Sh SYNOPSIS             \" Section Header - required - don't modify
+.Nm
+.Ar file1
+.Ar file2
+.Sh DESCRIPTION          \" Section Header - required - don't modify
+.Nm
+is a bash script for calculating the size of one file as a percentage of the other.  It uses the
+.Xr fsize 1
+bash script.
+.Pp                      \" Inserts a space
+Parameters:
+.Bl -tag -width "file1" -compact  \" Begins a tagged list 
+.It Ar file1               \" Each item preceded by .It macro
+The file on the top of the ratio
+.It Ar file2
+The file on the bottom of the ratio
+.El                      \" Ends the list
+.Sh FILES                \" File used or created by the topic of the man page
+.Bl -tag -width "~/Documents/Developer/Scripts/bin    " -compact
+.It Pa ~/Documents/Developer/Scripts/bin
+fsizecomp    The bash script
+.El                      \" Ends the list
+.Sh SEE ALSO 
+.\" List links in ascending order by section, alphabetically within a section.
+.\" Please do not reference files that do not exist without filing a bug report
+.Xr fsize 1

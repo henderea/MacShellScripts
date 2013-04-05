@@ -1,0 +1,7 @@
+#!/bin/bash
+SOF="Failed"
+mvn clean install
+if [ $? -eq 0 ]; then
+    SOF="Successful"
+fi
+growlnotify -n Terminal -a Terminal -s -m "Tests $SOF" -t "mvn clean install"

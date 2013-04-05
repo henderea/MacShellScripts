@@ -1,0 +1,14 @@
+#!/bin/bash
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+FIRST="$1"
+if [ ! -e "$FIRST.css" ]; then
+FIRST=${FIRST%.css}
+fi
+if [ ! -e "$FIRST.css" ]; then
+echo "Cannot find file $1"
+exit 1
+fi
+shift
+echo java -jar "$DIR/yuicompressor-2.4.7.jar" "$FIRST.css" -o "$FIRST.min.css" $@
+java -jar "$DIR/yuicompressor-2.4.7.jar" "$FIRST.css" -o "$FIRST.min.css" $@
+echo `$DIR/fsizecomp "$FIRST.min.css" "$FIRST.css"`

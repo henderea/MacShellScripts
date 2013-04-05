@@ -1,0 +1,14 @@
+#!/bin/bash
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+FIRST="$1"
+if [ ! -e "$FIRST.js" ]; then
+FIRST=${FIRST%.js}
+fi
+if [ ! -e "$FIRST.js" ]; then
+echo "Cannot find file $1"
+exit 1
+fi
+shift
+echo java -jar "$DIR/compiler.jar" --js "$FIRST.js" --js_output_file "$FIRST.comp.js" $@
+java -jar "$DIR/compiler.jar" --js "$FIRST.js" --js_output_file "$FIRST.comp.js" $@
+echo `"$DIR/fsizecomp" "$FIRST.comp.js" "$FIRST.js"`

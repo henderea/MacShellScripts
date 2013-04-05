@@ -1,0 +1,54 @@
+#!/usr/local/bin/ruby
+
+def colorize(text, color_code)
+  "\e[#{color_code}m#{text}\e[0m"
+end
+def red(text)
+  colorize(text, "41")
+end
+def gray(text)
+  colorize(text, "0;30;47")
+end
+
+fnd = ARGV.shift
+rpl = ARGV.shift
+r = /#{fnd}/o
+h = Hash.new
+un = Array.new
+unm = Array.new
+ARGV.each { |i|
+    i2 = File.basename(i)
+    d = i[0, (i.length - i2.length)]
+    j2 = i2.gsub(r, rpl)
+    j = "#{d}#{j2}"
+    h[i] = j
+    if(un.include?(j))
+        if(!unm.include?(j))
+            unm << j
+        end
+    else
+        un << j
+    end
+}
+
+ARGV.clear
+
+h.each { |i, j|
+    if(i == j)
+        puts gray("#{i} | #{j}")
+    elsif(unm.include?(j))
+        puts red("#{i} | #{j}")
+    else
+        puts "#{i} | #{j}"
+    end
+}
+
+print "Are you sure you want to rename these files? "
+res = gets.chomp
+if(res.downcase == "yes" || res.downcase == "y")
+    h.each { |i, j|
+        if(i != j)
+            File.rename(i, j)
+        end
+    }
+end

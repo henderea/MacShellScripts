@@ -1,0 +1,7 @@
+#!/bin/bash
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+NUM=`$DIR/fsize "$1"`
+DEM=`$DIR/fsize "$2"`
+COMP=`echo "scale=3; ( $NUM / $DEM ) * 100" | bc`
+echo $COMP"%"
+

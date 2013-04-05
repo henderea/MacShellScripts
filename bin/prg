@@ -1,0 +1,25 @@
+#!/bin/bash
+FR1=`vm_stat | grep "Pages free:" | sed s/[^0-9]//g`
+FRA=$(($FR1*4))
+echo $FRA
+purge
+FR2=`vm_stat | grep "Pages free:" | sed s/[^0-9]//g`
+FRB=$(($FR2*4))
+echo $FRB
+FRD=$(($FRB-$FRA))
+FRD2=`echo "scale=3; ( $FRD / 1024 )" | bc`
+echo $FRD2
+UT="MB"
+if [ $FRD -ge 0 ]; then
+    if [ $FRD -ge 1048576 ]; then
+        FRD2=`echo "scale=3; ( $FRD / 1024 / 1024 )" | bc`
+        UT="GB"
+    fi
+else
+    if [ $FRD -le -1048576 ]; then
+        FRD2=`echo "scale=3; ( $FRD / 1024 / 1024 )" | bc`
+        UT="GB"
+    fi
+fi
+echo "${FRD2}${UT}"
+/usr/local/bin/growlnotify -n Terminal -a Terminal -t "Memory freed" -m "${FRD2}${UT} freed"

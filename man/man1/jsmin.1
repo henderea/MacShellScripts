@@ -1,0 +1,60 @@
+.\"Modified from man(1) of FreeBSD, the NetBSD mdoc.template, and mdoc.samples.
+.\"See Also:
+.\"man mdoc.samples for a complete listing of options
+.\"man mdoc for the short list of editing options
+.\"/usr/share/misc/mdoc.template
+.Dd May 14, 2012               \" DATE 
+.Os "Mac OS X" 10.7
+.Dt JSMIN 1      \" Program name and manual section number 
+.Sh NAME                 \" Section Header - required - don't modify 
+.Nm jsmin
+.\" Use .Nm macro to designate other names for the documented program.
+.Nd Runs the YUI JavaScript compressor
+.Sh SYNOPSIS             \" Section Header - required - don't modify
+.Nm
+.Ar file
+.Op Fl Fl charset Ao Ar charset Ac
+.Op Fl Fl line-break Ao Ar column Ac
+.Op Fl Fl nomunge
+.Op Fl Fl disable-optimizations
+.Sh DESCRIPTION          \" Section Header - required - don't modify
+.Nm
+is a bash script that calls the YUI JavaScript compressor.  The file must have a .js extension, but you do not have to include the extension in the parameter.  It will create a new file that ends in .min.js instead of just .js (so
+.Nm
+lib.js (or
+.Nm
+lib) would minimize lib.js into a file named lib.min.js).  It will then output the size of the new file as a percentage of the size of the old file (using the
+.Xr fsizecomp 1
+bash script).  This uses the same compressor as the
+.Xr cssmin 1
+script.
+.Pp                      \" Inserts a space
+Parameters:
+.Bl -tag -width "file" -compact  \" Begins a tagged list 
+.It Ar file
+The file to minimize (the file must have a .js extension, but the extension can be left off when typing in the command)
+.El                      \" Ends the list
+.Pp
+Flags:
+.Bl -tag -width "--disable-optimizations" -compact  \" Differs from above in tag removed 
+.It Fl Fl charset Ao Ar charset Ac
+Read the input file using
+.Ao Ar charset Ac
+.It Fl Fl line-break Ao Ar column Ac
+Wrap the line after
+.Ao Ar column Ac characters
+.It Fl Fl nomunge
+Minify only, do not obfuscate
+.It Fl Fl disable-optimizations
+Disable all micro optimizations
+.El                      \" Ends the list
+.Sh FILES                \" File used or created by the topic of the man page
+.Bl -tag -width "~/Documents/Developer/scripts/bin    " -compact
+.It Pa ~/Documents/Developer/scripts/bin
+jsmin    The bash script
+.El                      \" Ends the list
+.Sh SEE ALSO 
+.\" List links in ascending order by section, alphabetically within a section.
+.\" Please do not reference files that do not exist without filing a bug report
+.Xr cssmin 1 ,
+.Xr fsizecomp 1

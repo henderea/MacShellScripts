@@ -1,0 +1,4 @@
+#!/bin/bash
+FIRST=`ls -1 | head -1`
+echo rm "$FIRST"
+rm "$FIRST"
