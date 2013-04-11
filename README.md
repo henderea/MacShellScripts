@@ -7,6 +7,16 @@ This repository is a collection of the shell scripts I have written for my Mac.
 
 Here are the descriptions for the scripts:
 
+* `chmodrd`: recursively change the permissions to the given parameter on all directories within and including the one given
+   * **parameters:**
+      * the directory permission bits (same as first parameter to regular `chmod`)
+      * the folder name
+   * **action:** recursively change the permissions to the given parameter on all directories within and including the one given
+* `chmodrf`: recursively change the permissions to the given parameter on all files within the directory given
+   * **parameters:**
+      * the file permission bits (same as first parameter to regular `chmod`)
+      * the folder name
+   * **action:** recursively change the permissions to the given parameter on all files within the directory given
 * `cssmin`: use the YUI compressor to minify a CSS file
    * **parameters:**
       * the filename (single file)
