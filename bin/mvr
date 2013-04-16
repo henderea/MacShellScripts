@@ -1,83 +1,110 @@
 #!/usr/bin/env ruby
 
-def format(text, color_code)
-  "\e[#{color_code}m#{text}\e[0m"
-end
+class FormatUtil
+  FORMAT_TO_CODE   = {
+      :bold      => '1',
+      :underline => '4',
+  }
+  FG_COLOR_TO_CODE = {
+      :black  => '30',
+      :red    => '31',
+      :green  => '32',
+      :yellow => '33',
+      :blue   => '34',
+      :purple => '35',
+      :cyan   => '36',
+      :white  => '37',
+  }
+  BG_COLOR_TO_CODE = {
+      :black  => '40',
+      :red    => '41',
+      :green  => '42',
+      :yellow => '43',
+      :blue   => '44',
+      :purple => '45',
+      :cyan   => '46',
+      :white  => '47',
+  }
 
-def red(text)
-  format(text, '41')
-end
+  def self::format(text, format_code)
+    "\e[#{format_code}m#{text}\e[0m"
+  end
 
-def gray(text)
-  format(text, '0;30;47')
-end
+  def self::build_string(bold, underline, fgcolor, bgcolor)
+    str = ''
+    hit = false
+    if bold
+      hit = true
+      str = FORMAT_TO_CODE[:bold]
+    end
+    if underline
+      str += ';' if hit
+      hit = true
+      str += FORMAT_TO_CODE[:underline]
+    end
+    unless fgcolor.nil? || FG_COLOR_TO_CODE[fgcolor].nil?
+      str += ';' if hit
+      hit = true
+      str += FG_COLOR_TO_CODE[fgcolor]
+    end
+    unless bgcolor.nil? || BG_COLOR_TO_CODE[bgcolor].nil?
+      str += ';' if hit
+      str += BG_COLOR_TO_CODE[bgcolor]
+    end
+    return str
+  end
 
-def green(text)
-  format(text, '32')
-end
+  def self::colorize(text, fgcolor = nil, bgcolor = nil)
+    self::format(text, self::build_string(false, false, fgcolor, bgcolor))
+  end
 
-def blueunderline(text)
-  format(text, '4;34')
-end
+  def self::bold(text, fgcolor = nil, bgcolor = nil)
+    self::format(text, self::build_string(true, false, fgcolor, bgcolor))
+  end
 
-def blue(text)
-  format(text, '34')
-end
+  def self::underline(text, fgcolor = nil, bgcolor = nil)
+    self::format(text, self::build_string(false, true, fgcolor, bgcolor))
+  end
 
-def bluebold(text)
-  format(text, '1;34')
-end
-
-def purplebold(text)
-  format(text, '1;35')
-end
-
-def bold(text)
-  format(text, '1')
-end
-
-def underline(text)
-  format(text, '4')
-end
-
-def boldunderline(text)
-  format(text, '1;4')
+  def self::boldunderline(text, fgcolor = nil, bgcolor = nil)
+    self::format(text, self::build_string(true, true, fgcolor, bgcolor))
+  end
 end
 
 pattern = ARGV.shift
 if pattern == 'help' || pattern == '--help' || pattern == '-h'
-  puts bold('NAME')
-  puts "    #{purplebold('mvr')} -- Renames a group of files and/or folders using a regular expression\n\n"
-  puts bold('SYNOPSIS')
-  puts "    #{purplebold('mvr')} <#{blueunderline('find')}> <#{blueunderline('replace')}> #{blue('file ...')}\n\n"
-  puts bold('DESCRIPTION')
-  puts "    #{purplebold('mvr')} is a Ruby script that allows you to rename a group of files and/or folders using a regular expression."
-  puts "    The #{blueunderline('find')} parameter uses normal regular expression syntax (there might be Ruby-specific things, but I doubt it)."
-  puts "    The #{blueunderline('replace')} parameter is plain text, using #{green('\\#')} to insert capture group #{green('#')} (so #{green('\\1')} to insert the first capture group)."
+  puts FormatUtil::bold('NAME')
+  puts "    #{FormatUtil::bold('mvr', :purple)} -- Renames a group of files and/or folders using a regular expression\n\n"
+  puts FormatUtil::bold('SYNOPSIS')
+  puts "    #{FormatUtil::bold('mvr', :purple)} <#{FormatUtil::underline('find', :blue)}> <#{FormatUtil::underline('replace', :blue)}> #{FormatUtil::colorize('file ...', :blue)}\n\n"
+  puts FormatUtil::bold('DESCRIPTION')
+  puts "    #{FormatUtil::bold('mvr', :purple)} is a Ruby script that allows you to rename a group of files and/or folders using a regular expression."
+  puts "    The #{FormatUtil::underline('find', :blue)} parameter uses normal regular expression syntax (there might be Ruby-specific things, but I doubt it)."
+  puts "    The #{FormatUtil::underline('replace', :blue)} parameter is plain text, using #{FormatUtil::colorize('\\#', :green)} to insert capture group #{FormatUtil::colorize('#', :green)} (so #{FormatUtil::colorize('\\1', :green)} to insert the first capture group)."
   puts '    The list of files can be as many items as you want, and you can use typical wildcard expressions.'
-  puts "    Any parameter after #{blueunderline('replace')} will be interpreted as a file/folder name that should be included in the list of what to rename.\n\n"
+  puts "    Any parameter after #{FormatUtil::underline('replace', :blue)} will be interpreted as a file/folder name that should be included in the list of what to rename.\n\n"
   puts '    Parameters:'
-  puts "    <#{blueunderline('find')}>     The regular expression for the renaming"
-  puts "    <#{blueunderline('replace')}>  The text to replace what the regular expression matches (use #{green('\\#')} to insert capture group #{green('#')} (so #{green('\\1')} to insert the first capture group))"
-  puts "    #{blue('file ...')}   The list of files and/or folders to rename"
+  puts "    <#{FormatUtil::underline('find', :blue)}>     The regular expression for the renaming"
+  puts "    <#{FormatUtil::underline('replace', :blue)}>  The text to replace what the regular expression matches (use #{FormatUtil::colorize('\\#', :green)} to insert capture group #{FormatUtil::colorize('#', :green)} (so #{FormatUtil::colorize('\\1', :green)} to insert the first capture group))"
+  puts "    #{FormatUtil::colorize('file ...', :blue)}   The list of files and/or folders to rename"
   exit
 end
 if ARGV.length < 2
-  puts "\n#{boldunderline('Usage')}: #{purplebold('mvr')} <#{blueunderline('find')}> <#{blueunderline('replace')}> #{blue('file ...')}\n\n"
-  puts "Run #{purplebold('mvr')} #{bluebold('help')} for command information.  There is also a man page that should be accessible via #{purplebold('man')} #{bluebold('mvr')}\n\n"
+  puts "\n#{FormatUtil::boldunderline('Usage')}: #{FormatUtil::bold('mvr', :purple)} <#{FormatUtil::underline('find', :blue)}> <#{FormatUtil::underline('replace', :blue)}> #{FormatUtil::colorize('file ...', :blue)}\n\n"
+  puts "Run #{FormatUtil::bold('mvr', :purple)} #{FormatUtil::bold('help', :blue)} for command information.  There is also a man page that should be accessible via #{FormatUtil::bold('man', :purple)} #{FormatUtil::bold('mvr', :blue)}\n\n"
   exit
 end
 replacement = ARGV.shift
-regex   = /#{pattern}/o
-mappings   = Hash.new
-encountered  = Array.new
-duplicated = Array.new
+regex       = /#{pattern}/o
+mappings    = Hash.new
+encountered = Array.new
+duplicated  = Array.new
 ARGV.each do |filename|
-  file_basename   = File.basename(filename)
-  directory    = filename[0, (filename.length - file_basename.length)]
-  replacement_basename   = file_basename.gsub(regex, replacement)
-  replacement_name    = "#{directory}#{replacement_basename}"
-  mappings[filename] = replacement_name
+  file_basename        = File.basename(filename)
+  directory            = filename[0, (filename.length - file_basename.length)]
+  replacement_basename = file_basename.gsub(regex, replacement)
+  replacement_name     = "#{directory}#{replacement_basename}"
+  mappings[filename]   = replacement_name
   if encountered.include?(replacement_name)
     unless duplicated.include?(replacement_name)
       duplicated << replacement_name
@@ -91,9 +118,9 @@ ARGV.clear
 
 mappings.each do |from, to|
   if from == to
-    puts gray("#{from} | #{to}")
+    puts FormatUtil::colorize("#{from} | #{to}", :black, :white)
   elsif duplicated.include?(to)
-    puts red("#{from} | #{to}")
+    puts FormatUtil::colorize("#{from} | #{to}", :white, :red)
   else
     puts "#{from} | #{to}"
   end
