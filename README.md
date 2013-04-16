@@ -60,7 +60,7 @@ Here are the descriptions for the scripts:
       * **Color Coding:** grey background for no change, red background for conflict
    * **action:** if you type `y` or `yes` (case insensitive), it will rename the files; anything else will cause it to cancel the operation
    * **note:** you may need to change the path on the first line of the file to point to your installation of Ruby, but hopefully it will work properly as-is
-   * **requires:** Ruby
+   * **requires:** Ruby and `lib/format.rb`
 * `openf`: open the first file in the folder
    * **note:** uses `ls -1` to get the listing
 * `prg`: run the Mac purge command
