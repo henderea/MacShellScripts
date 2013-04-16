@@ -1,54 +1,89 @@
 #!/usr/bin/env ruby
 
-def colorize(text, color_code)
+def format(text, color_code)
   "\e[#{color_code}m#{text}\e[0m"
 end
+
 def red(text)
-  colorize(text, "41")
-end
-def gray(text)
-  colorize(text, "0;30;47")
+  format(text, '41')
 end
 
-fnd = ARGV.shift
-rpl = ARGV.shift
-r = /#{fnd}/o
-h = Hash.new
-un = Array.new
-unm = Array.new
-ARGV.each { |i|
-    i2 = File.basename(i)
-    d = i[0, (i.length - i2.length)]
-    j2 = i2.gsub(r, rpl)
-    j = "#{d}#{j2}"
-    h[i] = j
-    if(un.include?(j))
-        if(!unm.include?(j))
-            unm << j
-        end
-    else
-        un << j
+def gray(text)
+  format(text, '0;30;47')
+end
+
+def bold(text)
+  format(text, '1')
+end
+
+def underline(text)
+  format(text, '4')
+end
+
+def boldunderline(text)
+  format(text, '1;4')
+end
+
+pattern = ARGV.shift
+if ARGV.length < 2
+  puts "\n#{boldunderline('Usage')}: #{bold('mvr')} <#{underline('find')}> <#{underline('replace')}> file ...\n\n"
+  exit
+end
+if pattern == 'help' || pattern == '--help' || pattern == '-h' || ARGV.length < 2
+  puts bold('NAME')
+  puts "    #{bold('mvr')} -- Renames a group of files and/or folders using a regular expression\n\n"
+  puts bold('SYNOPSIS')
+  puts "    #{bold('mvr')} <#{underline('find')}> <#{underline('replace')}> file ...\n\n"
+  puts bold('DESCRIPTION')
+  puts "    #{bold('mvr')} is a Ruby script that allows you to rename a group of files and/or folders using a regular expression."
+  puts "    The #{underline('find')} parameter uses normal regular expression syntax (there might be Ruby-specific things, but I doubt it)."
+  puts "    The #{underline('replace')} parameter is plain text, using \\# to insert capture group # (so \\1 to insert the first capture group)."
+  puts '    The list of files can be as many items as you want, and you can use typical wildcard expressions.'
+  puts "    Any parameter after #{underline('replace')} will be interpreted as a file/folder name that should be included in the list of what to rename.\n\n"
+  puts '    Parameters:'
+  puts "    <#{underline('find')}>     The regular expression for the renaming"
+  puts "    <#{underline('replace')}>  The text to replace what the regular expression matches (use \\# to insert capture group # (so \\1 to insert the first capture group))"
+  puts '    file ...   The list of files and/or folders to rename'
+  exit
+end
+replacement = ARGV.shift
+regex   = /#{pattern}/o
+mappings   = Hash.new
+encountered  = Array.new
+duplicated = Array.new
+ARGV.each do |filename|
+  file_basename   = File.basename(filename)
+  directory    = filename[0, (filename.length - file_basename.length)]
+  replacement_basename   = file_basename.gsub(regex, replacement)
+  replacement_name    = "#{directory}#{replacement_basename}"
+  mappings[filename] = replacement_name
+  if encountered.include?(replacement_name)
+    unless duplicated.include?(replacement_name)
+      duplicated << replacement_name
     end
-}
+  else
+    encountered << replacement_name
+  end
+end
 
 ARGV.clear
 
-h.each { |i, j|
-    if(i == j)
-        puts gray("#{i} | #{j}")
-    elsif(unm.include?(j))
-        puts red("#{i} | #{j}")
-    else
-        puts "#{i} | #{j}"
-    end
-}
+mappings.each do |from, to|
+  if from == to
+    puts gray("#{from} | #{to}")
+  elsif duplicated.include?(to)
+    puts red("#{from} | #{to}")
+  else
+    puts "#{from} | #{to}"
+  end
+end
 
-print "Are you sure you want to rename these files? "
-res = gets.chomp
-if(res.downcase == "yes" || res.downcase == "y")
-    h.each { |i, j|
-        if(i != j)
-            File.rename(i, j)
-        end
-    }
+print 'Are you sure you want to rename these files? '
+response = gets.chomp
+if response.downcase == 'yes' || response.downcase == 'y'
+  mappings.each do |from, to|
+    if from != to
+      File.rename(from, to)
+    end
+  end
 end

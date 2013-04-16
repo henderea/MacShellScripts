@@ -21,7 +21,7 @@ is a Ruby script that allows you to rename a group of files and/or folders using
 .Ar find
 parameter uses normal regular expression syntax (there might be Ruby-specific things, but I doubt it).  The
 .Ar replace
-parameter is plain text, using \# to insert capture group # (so \1 to insert the first capture group).  The
+parameter is plain text, using \\# to insert capture group # (so \\1 to insert the first capture group).  The
 list of files can be as many items as you want, and you can use typical wildcard expressions.  Any parameter after
 .Ar replace
 will be interpreted as a file/folder name that should be included in the list of what to rename.
