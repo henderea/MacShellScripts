@@ -12,6 +12,26 @@ def gray(text)
   format(text, '0;30;47')
 end
 
+def green(text)
+  format(text, '32')
+end
+
+def blueunderline(text)
+  format(text, '4;34')
+end
+
+def blue(text)
+  format(text, '34')
+end
+
+def bluebold(text)
+  format(text, '1;34')
+end
+
+def purplebold(text)
+  format(text, '1;35')
+end
+
 def bold(text)
   format(text, '1')
 end
@@ -25,25 +45,26 @@ def boldunderline(text)
 end
 
 pattern = ARGV.shift
-if ARGV.length < 2
-  puts "\n#{boldunderline('Usage')}: #{bold('mvr')} <#{underline('find')}> <#{underline('replace')}> file ...\n\n"
+if pattern == 'help' || pattern == '--help' || pattern == '-h'
+  puts bold('NAME')
+  puts "    #{purplebold('mvr')} -- Renames a group of files and/or folders using a regular expression\n\n"
+  puts bold('SYNOPSIS')
+  puts "    #{purplebold('mvr')} <#{blueunderline('find')}> <#{blueunderline('replace')}> #{blue('file ...')}\n\n"
+  puts bold('DESCRIPTION')
+  puts "    #{purplebold('mvr')} is a Ruby script that allows you to rename a group of files and/or folders using a regular expression."
+  puts "    The #{blueunderline('find')} parameter uses normal regular expression syntax (there might be Ruby-specific things, but I doubt it)."
+  puts "    The #{blueunderline('replace')} parameter is plain text, using #{green('\\#')} to insert capture group #{green('#')} (so #{green('\\1')} to insert the first capture group)."
+  puts '    The list of files can be as many items as you want, and you can use typical wildcard expressions.'
+  puts "    Any parameter after #{blueunderline('replace')} will be interpreted as a file/folder name that should be included in the list of what to rename.\n\n"
+  puts '    Parameters:'
+  puts "    <#{blueunderline('find')}>     The regular expression for the renaming"
+  puts "    <#{blueunderline('replace')}>  The text to replace what the regular expression matches (use #{green('\\#')} to insert capture group #{green('#')} (so #{green('\\1')} to insert the first capture group))"
+  puts "    #{blue('file ...')}   The list of files and/or folders to rename"
   exit
 end
-if pattern == 'help' || pattern == '--help' || pattern == '-h' || ARGV.length < 2
-  puts bold('NAME')
-  puts "    #{bold('mvr')} -- Renames a group of files and/or folders using a regular expression\n\n"
-  puts bold('SYNOPSIS')
-  puts "    #{bold('mvr')} <#{underline('find')}> <#{underline('replace')}> file ...\n\n"
-  puts bold('DESCRIPTION')
-  puts "    #{bold('mvr')} is a Ruby script that allows you to rename a group of files and/or folders using a regular expression."
-  puts "    The #{underline('find')} parameter uses normal regular expression syntax (there might be Ruby-specific things, but I doubt it)."
-  puts "    The #{underline('replace')} parameter is plain text, using \\# to insert capture group # (so \\1 to insert the first capture group)."
-  puts '    The list of files can be as many items as you want, and you can use typical wildcard expressions.'
-  puts "    Any parameter after #{underline('replace')} will be interpreted as a file/folder name that should be included in the list of what to rename.\n\n"
-  puts '    Parameters:'
-  puts "    <#{underline('find')}>     The regular expression for the renaming"
-  puts "    <#{underline('replace')}>  The text to replace what the regular expression matches (use \\# to insert capture group # (so \\1 to insert the first capture group))"
-  puts '    file ...   The list of files and/or folders to rename'
+if ARGV.length < 2
+  puts "\n#{boldunderline('Usage')}: #{purplebold('mvr')} <#{blueunderline('find')}> <#{blueunderline('replace')}> #{blue('file ...')}\n\n"
+  puts "Run #{purplebold('mvr')} #{bluebold('help')} for command information.  There is also a man page that should be accessible via #{purplebold('man')} #{bluebold('mvr')}\n\n"
   exit
 end
 replacement = ARGV.shift
