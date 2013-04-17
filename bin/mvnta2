@@ -1,0 +1,26 @@
+#!/usr/bin/env ruby
+
+output = `mvn clean install 2>&1`
+result = $?.success?
+
+lines = output.lines.map(&:chomp)
+output.clear
+
+found = false
+
+lines.each do |line|
+  if found
+    puts line
+  elsif line.start_with?('[ERROR] COMPILATION ERROR :') || line.start_with?('Results :')
+    puts line
+    found = true
+  end
+end
+
+if result
+  message = 'Successful'
+else
+  message = 'Failed'
+end
+
+`growlnotify -n Terminal -a Terminal -s -m "Tests #{message}" -t "mvn clean install"`
