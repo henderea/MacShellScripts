@@ -51,6 +51,10 @@ Here are the descriptions for the scripts:
    * **displays:** a Growl notification indicating success or failure
    * **requires:** maven, Growl, and `growlnotify`
    * **note:** `growlnotify` is available in Homebrew and from the Growl website
+* `mvnta2`: a Ruby script that runs a maven build, including tests, and only outputs the lines that come after a compile failure or test result start line
+   * **displays:** a Growl notification indicating success or failure
+   * **requires:** Ruby, maven, Growl, and `growlnotify`
+   * **note:** `growlnotify` is available in Homebrew and from the Growl website
 * `mvr`: a Ruby script that allows you to rename a group of files via regular expression
    * **parameters:**
       * match pattern
