@@ -27,4 +27,4 @@ else
   message = 'Failed'
 end
 
-`growlnotify -n Terminal -a Terminal -s -m "Tests #{message}" -t "mvn clean install"`
+`growlnotify -n Terminal -a Terminal -s -m "Build #{message}" -t "mvn clean install -D skipTests"`
