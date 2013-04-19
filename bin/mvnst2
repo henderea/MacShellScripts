@@ -21,7 +21,7 @@ if do_timer
       time = Time.now
       diff = time - start_time
       m = (diff / 60.0).floor
-      s = '%.3f' % (diff % 60)
+      s = '%2.3f' % (diff % 60)
       print "\r#{m}:#{s}"
       sleep(0.05)
     end
