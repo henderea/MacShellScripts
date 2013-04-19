@@ -1,0 +1,51 @@
+#!/usr/bin/env ruby
+
+$LOAD_PATH << File.expand_path(File.dirname(__FILE__) + '/../lib')
+
+require 'format'
+
+include Format
+
+message = '| You must pass a positive number to this script |'
+str = bold("+#{'-' * (message.length-2)}+", :white, :red)
+
+if ARGV.count < 1
+  puts "\n#{str}"
+  puts bold(message, :white, :red)
+  puts "#{str}\n\n"
+  exit 1
+end
+
+param = ARGV.shift
+
+if param =~ /.*\D.*/
+  puts "\n#{str}"
+  puts bold(message, :white, :red)
+  puts "#{str}\n\n"
+  exit 1
+end
+
+num = param.to_i
+
+if num < 1
+  puts "\n#{str}"
+  puts bold(message, :white, :red)
+  puts "#{str}\n\n"
+  exit 1
+end
+
+sum = 0
+(1..(num / 2.0).floor).each do |i|
+  if num % i == 0
+    sum += i
+  end
+end
+
+output = "| #{bold('%d', :green)} #{bold('(')}#{bold('%.3f%%', :cyan)} of #{bold('%d', :purple)}#{bold(')')} |" % [sum, (sum.to_f / num.to_f * 100.0), num]
+output2 = '| %d (%.3f%% of %d) |' % [sum, (sum.to_f / num.to_f * 100.0), num]
+
+str2 = bold("+#{'-' * (output2.length-2)}+")
+
+puts "\n#{str2}"
+puts output
+puts "#{str2}\n\n"
