@@ -19,11 +19,11 @@ if do_timer
   thread = Thread.new(Time.now) do |start_time|
     while true
       time = Time.now
-      diff = (time - start_time).round
+      diff = time - start_time
       m = (diff / 60.0).floor
-      s = diff % 60
+      s = '%.3f' % (diff % 60)
       print "\r#{m}:#{s}"
-      sleep(0.5)
+      sleep(0.05)
     end
   end
 end
