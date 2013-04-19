@@ -53,6 +53,8 @@ Here are the descriptions for the scripts:
    * **requires:** maven, Growl, and `growlnotify`
    * **note:** `growlnotify` is available in Homebrew and from the Growl website
 * `mvnst2`: a Ruby script that runs a maven build, skipping tests, and only outputs the lines that come after a compile failure or build success start line
+   * **parameters:**
+      * optional: `-t` or `--timer` to display a timer while the build is in progress
    * **displays:** a Growl notification indicating success or failure
    * **requires:** maven, Growl, and `growlnotify`
    * **note:** `growlnotify` is available in Homebrew and from the Growl website
@@ -61,6 +63,8 @@ Here are the descriptions for the scripts:
    * **requires:** maven, Growl, and `growlnotify`
    * **note:** `growlnotify` is available in Homebrew and from the Growl website
 * `mvnta2`: a Ruby script that runs a maven build, including tests, and only outputs the lines that come after a compile failure or test result start line
+   * **parameters:**
+      * optional: `-t` or `--timer` to display a timer while the build is in progress
    * **displays:** a Growl notification indicating success or failure
    * **requires:** Ruby, maven, Growl, and `growlnotify`
    * **note:** `growlnotify` is available in Homebrew and from the Growl website
