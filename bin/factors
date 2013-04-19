@@ -1,0 +1,70 @@
+#!/usr/bin/env ruby
+
+$LOAD_PATH << File.expand_path(File.dirname(__FILE__) + '/../lib')
+
+require 'format'
+require 'optparse'
+
+include Format
+
+single_line = false
+delimeter = ", "
+delimter_set = false
+
+option_parser = OptionParser.new do |opts|
+  opts.on("-1") do
+    single_line = true
+    unless delimter_set
+      delimeter = nil
+    end
+  end
+
+  opts.on("-d", "--delimeter [DELIMETER]") do |delim|
+    delimeter = delim
+    delimter_set = true
+  end
+end
+
+option_parser.parse!
+
+message = '| You must pass a positive number to this script |'
+str = bold("+#{'-' * (message.length-2)}+", :white, :red)
+
+if ARGV.count < 1
+  puts "\n#{str}"
+  puts bold(message, :white, :red)
+  puts "#{str}\n\n"
+  exit 1
+end
+
+param = ARGV.shift
+
+if param =~ /.*\D.*/
+  puts "\n#{str}"
+  puts bold(message, :white, :red)
+  puts "#{str}\n\n"
+  exit 1
+end
+
+num = param.to_i
+
+if num < 1
+  puts "\n#{str}"
+  puts bold(message, :white, :red)
+  puts "#{str}\n\n"
+  exit 1
+end
+
+printed = false
+
+(1..(num / 2.0).floor).each do |i|
+  if num % i == 0
+    if printed
+      print delimeter unless delimeter.nil?
+      print "\n" if single_line
+    end
+    printed = true
+    print i
+  end
+end
+print "\n"
