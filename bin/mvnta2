@@ -1,7 +1,40 @@
 #!/usr/bin/env ruby
 
+require 'optparse'
+
+do_timer = false
+
+option_parser = OptionParser.new do |opts|
+  # Create a switch
+  opts.on("-t", "--timer") do
+    do_timer = true
+  end
+end
+
+option_parser.parse!
+
+thread = nil
+
+if do_timer
+  thread = Thread.new(Time.now) do |start_time|
+    while true
+      time = Time.now
+      diff = (time - start_time).round
+      m = (diff / 60.0).floor
+      s = diff % 60
+      print "\r#{m}:#{s}"
+      sleep(0.5)
+    end
+  end
+end
+
 output = `mvn clean install 2>&1`
 result = $?.success?
+
+unless thread.nil?
+  thread.kill
+  print "\r"
+end
 
 lines = output.lines.map(&:chomp)
 output.clear
