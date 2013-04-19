@@ -51,17 +51,47 @@ end
 
 ARGV.clear
 
-mappings.each do |from, to|
-  if from == to
-    puts colorize("#{from} | #{to}", :black, :white)
-  elsif duplicated.include?(to)
-    puts colorize("#{from} | #{to}", :white, :red)
-  else
-    puts "#{from} | #{to}"
-  end
+len1 = mappings.keys.max do |a, b|
+  a.length <=> b.length
 end
 
-print 'Are you sure you want to rename these files? '
+len2 = mappings.values.max do |a, b|
+  a.length <=> b.length
+end
+
+len1 = len1.length
+len2 = len2.length
+
+if len1 < 3
+  len1 = 3
+end
+
+if len2 < 3
+  len2 = 3
+end
+
+border = "+#{'-' * (len1+2)}+#{'-' * (len2+2)}+"
+
+puts border
+puts "| #{'Old'.center(len1)} | #{'New'.center(len2)} |"
+puts border
+
+mappings.each do |from, to|
+  from2 = from.center(len1)
+  to2 = to.center(len2)
+  if from == to
+    from2 = colorize(from2, :black, :white)
+    to2 = colorize(to2, :black, :white)
+  elsif duplicated.include?(to)
+    from2 = colorize(from2, :white, :red)
+    to2 = colorize(to2, :white, :red)
+  end
+  puts "| #{from2} | #{to2} |"
+end
+
+puts border
+
+print "\nAre you sure you want to rename these files (yes/no or y/n)? "
 response = gets.chomp
 if response.downcase == 'yes' || response.downcase == 'y'
   mappings.each do |from, to|
