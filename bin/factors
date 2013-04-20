@@ -1,27 +1,27 @@
 #!/usr/bin/env ruby
 
-$LOAD_PATH << File.expand_path(File.dirname(__FILE__) + '/../lib')
+$LOAD_PATH << File.dirname(__FILE__)
 
-require 'format'
+require 'lib/format'
 require 'optparse'
 
 include Format
 
 single_line = false
-delimeter = ", "
-delimter_set = false
+delimiter = ', '
+delimiter_set = false
 
 option_parser = OptionParser.new do |opts|
-  opts.on("-1") do
+  opts.on('-1') do
     single_line = true
-    unless delimter_set
-      delimeter = nil
+    unless delimiter_set
+      delimiter = nil
     end
   end
 
-  opts.on("-d", "--delimeter [DELIMETER]") do |delim|
-    delimeter = delim
-    delimter_set = true
+  opts.on('-d', '--delimiter [DELIMITER]') do |delim|
+    delimiter = delim
+    delimiter_set = true
   end
 end
 
@@ -60,7 +60,7 @@ printed = false
 (1..(num / 2.0).floor).each do |i|
   if num % i == 0
     if printed
-      print delimeter unless delimeter.nil?
+      print delimiter unless delimiter.nil?
       print "\n" if single_line
     end
     printed = true

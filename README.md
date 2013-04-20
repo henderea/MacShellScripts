@@ -24,6 +24,14 @@ Here are the descriptions for the scripts:
    * **outputs:** the minified file with name `<name>.min.css`, where `<name>` is the name of the input file without the extension
    * **displays:** prints the file size percent remaining
    * **requires:** `yuicompressor-2.4.7.jar` and `fsizecomp`
+* `factors`: find the factor of a number including 1, but not the number itself
+   * **required parameters:**
+      * the number (a positive integer)
+   * **optional parameters:**
+      * `-1` to output one per line; disables default delimeter
+      * `-d DELIM` or `--delimiter DELIM` to use `DELIM` as the delimiter; overrides delimiter disable of `-1`; leaving `DELIM` blank will disable the delimiter
+   * **displays:** prints the factors separated by a delimiter (if not disabled).  If `-1` has been specified, the factors will be on separate lines
+   * **requires:** Ruby and `lib/format.rb`
 * `factorsum`: find the sum of the factors of a number and output it along with the percentage it is of the number
    * **parameters:**
       * the number (a positive integer)
