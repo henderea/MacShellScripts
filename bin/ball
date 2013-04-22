@@ -1,0 +1,24 @@
+#!/usr/bin/env ruby
+
+cols = `tput cols`.to_i
+
+width = (cols / 2).floor
+
+pos = 0
+dir = 1
+
+Signal.trap("SIGINT") do
+  print "\n"
+  exit 1
+end
+
+while true
+  print "\r|#{' ' * pos}##{' ' * (width - pos)}|"
+  pos += dir
+  if pos == 0
+    dir = 1
+  elsif pos == width
+    dir = -1
+  end
+  sleep(0.05)
+end

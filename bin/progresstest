@@ -1,0 +1,18 @@
+#!/usr/bin/env ruby
+
+width = 100
+
+progress = 0
+
+progress_inc = 1
+
+timeout = 0.1
+
+while progress <= 100
+  pos = ((progress.to_f / 100.0) * width).floor
+  print "\r|#{'=' * pos}>#{' ' * (width - pos)}| #{progress}%"
+  progress += progress_inc
+  sleep(timeout)
+end
+
+puts "\nDone"
