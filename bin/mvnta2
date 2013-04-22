@@ -50,6 +50,12 @@ lines.each do |line|
   end
 end
 
+unless found
+  lines.each do |line|
+    puts line
+  end
+end
+
 if result
   message = 'Successful'
 else
