@@ -6,6 +6,7 @@ options = {
     do_timer: false,
     skip_tests: false,
     no_sticky: false,
+    disp_all: false,
 }
 
 option_parser = OptionParser.new do |opts|
@@ -20,57 +21,65 @@ option_parser = OptionParser.new do |opts|
   opts.on('-n', '--no-sticky') do
     options[:no_sticky] = true
   end
+
+  opts.on('-a', '--display-all') do
+    options[:disp_all] = true
+  end
 end
 
 option_parser.parse!
 
 thread = nil
 
-if options[:do_timer]
-  thread = Thread.new(Time.now) do |start_time|
-    while true
-      time = Time.now
-      diff = time - start_time
-      m = (diff / 60.0).floor
-      s = '%06.3f' % (diff % 60)
-      print "\r#{m}:#{s}"
-      sleep(0.05)
-    end
-  end
-end
-
 st = ''
 st = ' -D skipTests' if options[:skip_tests]
 
-output = `mvn clean install#{st} 2>&1`
-result = $?.success?
-
-unless thread.nil?
-  thread.kill
-  print "\r"
-end
-
-lines = output.lines.map(&:chomp)
-output.clear
-
-found = false
-
-lines.each do |line|
-  if found
-    puts line
-  elsif line.start_with?('[ERROR] COMPILATION ERROR :') || line.start_with?('Results :')
-    puts line
-    found = true
-  elsif line.start_with?('[INFO] BUILD SUCCESS')
-    puts '[INFO] ------------------------------------------------------------------------'
-    puts line
-    found = true
+if options[:disp_all]
+  result = system("mvn clean install#{st} 2>&1")
+else
+  if options[:do_timer]
+    thread = Thread.new(Time.now) do |start_time|
+      while true
+        time = Time.now
+        diff = time - start_time
+        m = (diff / 60.0).floor
+        s = '%06.3f' % (diff % 60)
+        print "\r#{m}:#{s}"
+        sleep(0.05)
+      end
+    end
   end
-end
 
-unless found
+  output = `mvn clean install#{st} 2>&1`
+  result = $?.success?
+
+  unless thread.nil?
+    thread.kill
+    print "\r"
+  end
+
+  lines = output.lines.map(&:chomp)
+  output.clear
+
+  found = false
+
   lines.each do |line|
-    puts line
+    if found
+      puts line
+    elsif line.start_with?('[ERROR] COMPILATION ERROR :') || line.start_with?('Results :')
+      puts line
+      found = true
+    elsif line.start_with?('[INFO] BUILD SUCCESS')
+      puts '[INFO] ------------------------------------------------------------------------'
+      puts line
+      found = true
+    end
+  end
+
+  unless found
+    lines.each do |line|
+      puts line
+    end
   end
 end
 
