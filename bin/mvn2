@@ -1,0 +1,79 @@
+#!/usr/bin/env ruby
+
+require 'optparse'
+
+do_timer = false
+skip_tests = false
+
+option_parser = OptionParser.new do |opts|
+  opts.on('-t', '--timer') do
+    do_timer = true
+  end
+
+  opts.on('-s', '--skip-tests') do
+    skip_tests = true
+  end
+end
+
+option_parser.parse!
+
+thread = nil
+
+if do_timer
+  thread = Thread.new(Time.now) do |start_time|
+    while true
+      time = Time.now
+      diff = time - start_time
+      m = (diff / 60.0).floor
+      s = '%06.3f' % (diff % 60)
+      print "\r#{m}:#{s}"
+      sleep(0.05)
+    end
+  end
+end
+
+st = ''
+st = ' -D skipTests' if skip_tests
+
+output = `mvn clean install#{st} 2>&1`
+result = $?.success?
+
+unless thread.nil?
+  thread.kill
+  print "\r"
+end
+
+lines = output.lines.map(&:chomp)
+output.clear
+
+found = false
+
+lines.each do |line|
+  if found
+    puts line
+  elsif line.start_with?('[ERROR] COMPILATION ERROR :') || line.start_with?('Results :')
+    puts line
+    found = true
+  elsif line.start_with?('[INFO] BUILD SUCCESS')
+    puts '[INFO] ------------------------------------------------------------------------'
+    puts line
+    found = true
+  end
+end
+
+unless found
+  lines.each do |line|
+    puts line
+  end
+end
+
+msg = 'Tests'
+msg = 'Build' if skip_tests
+
+if result
+  message = 'Successful'
+else
+  message = 'Failed'
+end
+
+`growlnotify -n Terminal -a Terminal -s -m "#{msg} #{message}" -t "mvn clean install#{st}"`
