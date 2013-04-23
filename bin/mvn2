@@ -2,16 +2,23 @@
 
 require 'optparse'
 
-do_timer = false
-skip_tests = false
+options = {
+    do_timer: false,
+    skip_tests: false,
+    no_sticky: false,
+}
 
 option_parser = OptionParser.new do |opts|
   opts.on('-t', '--timer') do
-    do_timer = true
+    options[:do_timer] = true
   end
 
   opts.on('-s', '--skip-tests') do
-    skip_tests = true
+    options[:skip_tests] = true
+  end
+
+  opts.on('-n', '--no-sticky') do
+    options[:no_sticky] = true
   end
 end
 
@@ -19,7 +26,7 @@ option_parser.parse!
 
 thread = nil
 
-if do_timer
+if options[:do_timer]
   thread = Thread.new(Time.now) do |start_time|
     while true
       time = Time.now
@@ -33,7 +40,7 @@ if do_timer
 end
 
 st = ''
-st = ' -D skipTests' if skip_tests
+st = ' -D skipTests' if options[:skip_tests]
 
 output = `mvn clean install#{st} 2>&1`
 result = $?.success?
@@ -68,7 +75,7 @@ unless found
 end
 
 msg = 'Tests'
-msg = 'Build' if skip_tests
+msg = 'Build' if options[:skip_tests]
 
 if result
   message = 'Successful'
@@ -76,4 +83,7 @@ else
   message = 'Failed'
 end
 
-`growlnotify -n Terminal -a Terminal -s -m "#{msg} #{message}" -t "mvn clean install#{st}"`
+sticky = ' -s'
+sticky = '' if options[:no_sticky]
+
+`growlnotify -n Terminal -a Terminal#{sticky} -m "#{msg} #{message}" -t "mvn clean install#{st}"`

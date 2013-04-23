@@ -58,8 +58,9 @@ Here are the descriptions for the scripts:
    * **requires:** `yuicompressor-2.4.7.jar` and `fsizecomp`
 * `mvn2`: a Ruby script that runs a maven build, including (or not including) tests, and only outputs the lines that come after a compile failure, build success, or test result start line
    * **optional parameters:**
-      * `-t` or `--timer` to display a timer while the build is in progress
-      * `-s` or `--skip-tests` to skip tests
+      * `-t` or `--timer` to display a timer while the build is in progress (default is display nothing)
+      * `-s` or `--skip-tests` to skip tests (default is running tests)
+      * `-n` or `--no-sticky` to make the growl notification non-sticky (default is sticky)
    * **displays:** a Growl notification indicating success or failure
    * **requires:** Ruby, maven, Growl, and `growlnotify`
    * **note:** `growlnotify` is available in Homebrew and from the Growl website
