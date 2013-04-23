@@ -7,7 +7,7 @@ width = (cols / 2).floor
 pos = 0
 dir = 1
 
-Signal.trap("SIGINT") do
+Signal.trap('SIGINT') do
   print "\n"
   exit 1
 end

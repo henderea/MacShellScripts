@@ -77,10 +77,10 @@ else
         s = '%06.3f' % (diff % 60)
         msg = "#{m}:#{s}"
         unless avg == 0
-          progress = ((diff.to_f / avg.to_f) * 100.0).floor
-          bars = progress
+          progress = ((diff.to_f / avg.to_f) * 100.0)
+          bars = progress.floor
           bars = 100 if bars > 100
-          msg = "[#{'=' * bars}>#{' ' * (100 - bars)}] #{m}:#{s} (~#{progress}%)"
+          msg = "[#{'=' * bars}>#{' ' * (100 - bars)}] #{m}:#{s} (~#{'%.3f' % progress}%)"
         end
         print "\r#{msg}"
         sleep(0.05)
