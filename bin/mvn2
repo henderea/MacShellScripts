@@ -7,6 +7,7 @@ options = {
     skip_tests: false,
     no_sticky: false,
     disp_all: false,
+    track_average: false,
 }
 
 option_parser = OptionParser.new do |opts|
@@ -25,6 +26,10 @@ option_parser = OptionParser.new do |opts|
   opts.on('-a', '--display-all') do
     options[:disp_all] = true
   end
+
+  opts.on('-k', '--track-average') do
+    options[:track_average] = true
+  end
 end
 
 option_parser.parse!
@@ -37,14 +42,47 @@ st = ' -D skipTests' if options[:skip_tests]
 if options[:disp_all]
   result = system("mvn clean install#{st} 2>&1")
 else
+  average = 0
+  averages = [0, 0]
+  counts = [0, 0]
+  if options[:track_average]
+    if File.exist?('avg.txt')
+      lines = IO.readlines('avg.txt')
+      parts1 = lines[0].chomp.split(';')
+      parts2 = lines[1].chomp.split(';')
+      averages[0] = parts1[0].to_i
+      counts[0] = parts1[1].to_i
+      averages[1] = parts2[0].to_i
+      counts[1] = parts2[1].to_i
+      if counts[0] == 0
+        averages[0] = 0
+      end
+      if counts[1] == 0
+        averages[1] = 0
+      end
+      if options[:skip_tests]
+        average = averages[0]
+      else
+        average = averages[1]
+      end
+    end
+  end
+  time1 = Time.now
   if options[:do_timer]
-    thread = Thread.new(Time.now) do |start_time|
+    thread = Thread.new(time1, average) do |start_time, avg|
       while true
         time = Time.now
         diff = time - start_time
         m = (diff / 60.0).floor
         s = '%06.3f' % (diff % 60)
-        print "\r#{m}:#{s}"
+        msg = "#{m}:#{s}"
+        unless avg == 0
+          progress = ((diff.to_f / avg.to_f) * 100.0).floor
+          bars = progress
+          bars = 100 if bars > 100
+          msg = "[#{'=' * bars}>#{' ' * (100 - bars)}] #{m}:#{s} (~#{progress}%)"
+        end
+        print "\r#{msg}"
         sleep(0.05)
       end
     end
@@ -53,9 +91,27 @@ else
   output = `mvn clean install#{st} 2>&1`
   result = $?.success?
 
+  if options[:track_average]
+    time2 = Time.now
+
+    diff = time2 - time1
+
+    if options[:skip_tests]
+      sum = averages[0] * counts[0] + diff
+      counts[0] += 1
+      averages[0] = sum / counts[0]
+    else
+      sum = averages[1] * counts[1] + diff
+      counts[1] += 1
+      averages[1] = sum / counts[1]
+    end
+
+    IO.write('avg.txt', "#{averages[0]};#{counts[0]}\n#{averages[1]};#{counts[1]}")
+  end
+
   unless thread.nil?
     thread.kill
-    print "\r"
+    print "\n"
   end
 
   lines = output.lines.map(&:chomp)

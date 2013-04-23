@@ -62,6 +62,7 @@ Here are the descriptions for the scripts:
       * `-s` or `--skip-tests` to skip tests (default is running tests)
       * `-n` or `--no-sticky` to make the growl notification non-sticky (default is sticky)
       * `-a` or `--display-all` to display all output (default is to only display the output after a compile failure, build success, or test result start line)
+      * `-k` or `--track-average` to update the average (stored in `avg.txt`) and also display a progress bar while the build is in progress (default is not to do track average or display progress bar)
    * **displays:** a Growl notification indicating success or failure
    * **requires:** Ruby, maven, Growl, and `growlnotify`
    * **note:** `growlnotify` is available in Homebrew and from the Growl website
