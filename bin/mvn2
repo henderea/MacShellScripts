@@ -72,9 +72,8 @@ def update_full_avg(average, options, result, time1)
     diff = time2 - time1
 
     if result || diff >= average / 2.0
-      exists = File.exist?(full_avg_file(options))
       file = File.new(full_avg_file(options), 'a+')
-      file.write("#{exists ? "\n" : ''}#{diff}")
+      file.write("#{diff}")
       file.close
     end
   end
