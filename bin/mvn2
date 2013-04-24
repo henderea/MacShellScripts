@@ -54,87 +54,69 @@ thread = nil
 st = ''
 st = ' -D skipTests' if options[:skip_tests]
 
-if options[:disp_all]
-  result = system("mvn clean install#{st} 2>&1")
-else
+def get_data(averages, counts, lines, ind)
+  parts = lines[ind].chomp.split(';')
+  averages[ind] = parts[0].to_i
+  counts[ind] = parts[1].to_i
+  if counts[ind] == 0
+    averages[ind] = 0
+  end
+end
+
+def read_avg(options)
   average = 0
   averages = [0, 0]
   counts = [0, 0]
   if options[:track_average]
     if File.exist?('avg.txt')
       lines = IO.readlines('avg.txt')
-      parts1 = lines[0].chomp.split(';')
-      parts2 = lines[1].chomp.split(';')
-      averages[0] = parts1[0].to_i
-      counts[0] = parts1[1].to_i
-      averages[1] = parts2[0].to_i
-      counts[1] = parts2[1].to_i
-      if counts[0] == 0
-        averages[0] = 0
-      end
-      if counts[1] == 0
-        averages[1] = 0
-      end
-      if options[:skip_tests]
-        average = averages[0]
-      else
-        average = averages[1]
-      end
+      get_data(averages, counts, lines, 0)
+      get_data(averages, counts, lines, 1)
+      average = averages[options[:skip_tests] ? 0 : 1]
     end
   end
-  time1 = Time.now
-  if options[:do_timer]
-    thread = Thread.new(time1, average, options[:colored]) do |start_time, avg, colored|
-      amin = (avg / 60.0).floor
-      asec = '%06.3f' % (avg % 60)
-      while true
-        time = Time.now
-        diff = time - start_time
-        m = (diff / 60.0).floor
-        s = '%06.3f' % (diff % 60)
-        msg = "#{m}:#{s}"
-        msg = colorize("#{m}:#{s}", :green) if colored
-        unless avg == 0
-          progress = ((diff.to_f / avg.to_f) * 100.0)
-          bars = progress.floor
-          bars = 100 if bars > 100
-          msg = "[#{'=' * bars}>#{' ' * (100 - bars)}] #{m}:#{s} (~#{'%.3f' % progress}%) (average: #{amin}:#{asec})"
-          msg = "[#{'=' * bars}>#{' ' * (100 - bars)}] #{colorize("#{m}:#{s}", :green)} (#{colorize("~#{'%.3f' % progress}%", :purple)}) (average: #{colorize("#{amin}:#{asec}", :cyan)})" if colored
-        end
-        print "\r#{msg}"
-        sleep(0.05)
-      end
-    end
-  end
+  return average, averages, counts
+end
 
-  output = `mvn clean install#{st} 2>&1`
-  result = $?.success?
+def calc_new_avg(averages, counts, diff, ind)
+  sum = averages[ind] * counts[ind] + diff
+  counts[ind] += 1
+  averages[ind] = sum / counts[ind]
+end
 
+def update_avg(average, averages, counts, options, result, time1)
   if options[:track_average] && (result || !options[:skip_tests])
     time2 = Time.now
-
     diff = time2 - time1
 
     unless diff < average / 2.0
-      if options[:skip_tests]
-        sum = averages[0] * counts[0] + diff
-        counts[0] += 1
-        averages[0] = sum / counts[0]
-      else
-        sum = averages[1] * counts[1] + diff
-        counts[1] += 1
-        averages[1] = sum / counts[1]
-      end
-
+      options[:skip_tests] ? calc_new_avg(averages, counts, diff, 0) : calc_new_avg(averages, counts, diff, 1)
       IO.write('avg.txt', "#{averages[0]};#{counts[0]}\n#{averages[1]};#{counts[1]}")
     end
   end
+end
 
-  unless thread.nil?
-    thread.kill
-    print "\n"
-  end
+def colorize_if_should(text, fgcolor, colored)
+  colored ? colorize(text, fgcolor) : text
+end
 
+def get_avg_message(amin, asec, avg, colored, diff, m, s)
+  progress = ((diff.to_f / avg.to_f) * 100.0)
+  bars = [progress.floor, 100].min
+  "[#{'=' * bars}>#{' ' * (100 - bars)}] #{colorize_if_should("#{m}:#{s}", :green, colored)} (#{colorize_if_should("~#{'%.3f' % progress}%", :purple, colored)}) (average: #{colorize_if_should("#{amin}:#{asec}", :cyan, colored)})"
+end
+
+def get_timer_message(amin, asec, avg, colored, start_time, time)
+  diff = time - start_time
+  m, s = get_time_parts(diff)
+  (avg == 0) ? colorize_if_should("#{m}:#{s}", :green, colored) : get_avg_message(amin, asec, avg, colored, diff, m, s)
+end
+
+def get_time_parts(time)
+  return (time / 60.0).floor, '%06.3f' % (time % 60)
+end
+
+def output_lines(output)
   lines = output.lines.map(&:chomp)
   output.clear
 
@@ -160,16 +142,33 @@ else
   end
 end
 
-msg = 'Tests'
-msg = 'Build' if options[:skip_tests]
+def run_and_filter_output(options, st, thread)
+  average, averages, counts = read_avg(options)
+  time1 = Time.now
+  if options[:do_timer]
+    thread = Thread.new(time1, average, options[:colored]) do |start_time, avg, colored|
+      amin, asec = get_time_parts(avg)
+      while true
+        print "\r#{get_timer_message(amin, asec, avg, colored, start_time, Time.now)}"
+        sleep(0.05)
+      end
+    end
+  end
 
-if result
-  message = 'Successful'
-else
-  message = 'Failed'
+  output = `mvn clean install#{st} 2>&1`
+  result = $?.success?
+
+  update_avg(average, averages, counts, options, result, time1)
+
+  unless thread.nil?
+    thread.kill
+    print "\n"
+  end
+
+  output_lines(output)
+  result
 end
 
-sticky = ' -s'
-sticky = '' if options[:no_sticky]
+result = options[:disp_all] ? system("mvn clean install#{st} 2>&1") : run_and_filter_output(options, st, thread)
 
-`growlnotify -n Terminal -a Terminal#{sticky} -m "#{msg} #{message}" -t "mvn clean install#{st}"`
+`growlnotify -n Terminal -a Terminal#{(options[:no_sticky] ? '' : ' -s')} -m "#{(options[:skip_tests] ? 'Build' : 'Tests')} #{(result ? 'Successful' : 'Failed')}" -t "mvn clean install#{st}"`
