@@ -65,7 +65,7 @@ Here are the descriptions for the scripts:
       * `-k` or `--track-average` to update the average (stored in `avg.txt`) and also display a progress bar while the build is in progress (default is not to do track average or display progress bar)
       * `-c` or `--colored` to display some colors in the timer/progress message
    * **displays:** a Growl notification indicating success or failure
-   * **requires:** Ruby, maven, Growl, and `growlnotify`
+   * **requires:** Ruby, maven, Growl, `growlnotify`, and `lib/format.rb`
    * **note:** `growlnotify` is available in Homebrew and from the Growl website
 * `mvr`: a Ruby script that allows you to rename a group of files via regular expression
    * **parameters:**
