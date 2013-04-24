@@ -58,7 +58,7 @@ def read_full_avg(options, avg)
   if options[:track_full_average] && File.exist?(file_name)
     lines = IO.readlines(file_name)
     data = lines.map { |line|
-      line.chomp.to_i
+      line.chomp.to_f
     }
     sum = data.reduce(:+)
     average = sum.to_f / data.count.to_f
@@ -72,8 +72,9 @@ def update_full_avg(average, options, result, time1)
     diff = time2 - time1
 
     if result || diff >= average / 2.0
+      exists = File.exist?(full_avg_file(options))
       file = File.new(full_avg_file(options), 'a+')
-      file.write(diff)
+      file.write("#{exists ? "\n" : ''}#{diff}")
       file.close
     end
   end
