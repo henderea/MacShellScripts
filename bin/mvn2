@@ -11,35 +11,24 @@ options = {
     do_timer: false,
     skip_tests: false,
     no_sticky: false,
-    disp_all: false,
+    display_all: false,
     track_average: false,
     colored: false,
 }
 
+def add_option(options, opts, short_name, long_name, opt_name)
+  opts.on(short_name, long_name) do
+    options[opt_name] = true
+  end
+end
+
 option_parser = OptionParser.new do |opts|
-  opts.on('-t', '--timer') do
-    options[:do_timer] = true
-  end
-
-  opts.on('-s', '--skip-tests') do
-    options[:skip_tests] = true
-  end
-
-  opts.on('-n', '--no-sticky') do
-    options[:no_sticky] = true
-  end
-
-  opts.on('-a', '--display-all') do
-    options[:disp_all] = true
-  end
-
-  opts.on('-k', '--track-average') do
-    options[:track_average] = true
-  end
-
-  opts.on('-c', '--colored') do
-    options[:colored] = true
-  end
+  add_option(options, opts, '-t', '--timer', :do_timer)
+  add_option(options, opts, '-s', '--skip-tests', :skip_tests)
+  add_option(options, opts, '-n', '--no-sticky', :no_sticky)
+  add_option(options, opts, '-a', '--display-all', :display_all)
+  add_option(options, opts, '-k', '--track-average', :track_average)
+  add_option(options, opts, '-c', '--colored', :colored)
 end
 
 option_parser.parse!
@@ -49,31 +38,24 @@ Signal.trap('SIGINT') do
   exit 1
 end
 
-thread = nil
-
-st = ''
-st = ' -D skipTests' if options[:skip_tests]
+st = options[:skip_tests] ? ' -D skipTests' : ''
 
 def get_data(averages, counts, lines, ind)
   parts = lines[ind].chomp.split(';')
   averages[ind] = parts[0].to_i
   counts[ind] = parts[1].to_i
-  if counts[ind] == 0
-    averages[ind] = 0
-  end
+  averages[ind] = 0 if counts[ind] == 0
 end
 
 def read_avg(options)
   average = 0
   averages = [0, 0]
   counts = [0, 0]
-  if options[:track_average]
-    if File.exist?('avg.txt')
-      lines = IO.readlines('avg.txt')
-      get_data(averages, counts, lines, 0)
-      get_data(averages, counts, lines, 1)
-      average = averages[options[:skip_tests] ? 0 : 1]
-    end
+  if options[:track_average] && File.exist?('avg.txt')
+    lines = IO.readlines('avg.txt')
+    get_data(averages, counts, lines, 0)
+    get_data(averages, counts, lines, 1)
+    average = averages[options[:skip_tests] ? 0 : 1]
   end
   return average, averages, counts
 end
@@ -143,6 +125,7 @@ def output_lines(output)
 end
 
 def run_and_filter_output(options, st, thread)
+  thread = nil
   average, averages, counts = read_avg(options)
   time1 = Time.now
   if options[:do_timer]
@@ -169,6 +152,6 @@ def run_and_filter_output(options, st, thread)
   result
 end
 
-result = options[:disp_all] ? system("mvn clean install#{st} 2>&1") : run_and_filter_output(options, st, thread)
+result = options[:display_all] ? system("mvn clean install#{st} 2>&1") : run_and_filter_output(options, st, thread)
 
 `growlnotify -n Terminal -a Terminal#{(options[:no_sticky] ? '' : ' -s')} -m "#{(options[:skip_tests] ? 'Build' : 'Tests')} #{(result ? 'Successful' : 'Failed')}" -t "mvn clean install#{st}"`
