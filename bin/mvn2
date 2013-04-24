@@ -96,7 +96,7 @@ else
   output = `mvn clean install#{st} 2>&1`
   result = $?.success?
 
-  if options[:track_average]
+  if options[:track_average] && (result || !options[:skip_tests])
     time2 = Time.now
 
     diff = time2 - time1
