@@ -2,6 +2,7 @@
 
 $LOAD_PATH << File.dirname(__FILE__)
 
+require 'lib/maputil'
 require 'lib/format'
 require 'optparse'
 
@@ -57,11 +58,11 @@ def read_full_avg(options, avg)
   file_name = full_avg_file(options)
   if options[:track_full_average] && File.exist?(file_name)
     lines = IO.readlines(file_name)
-    data = lines.map { |line|
-      line.chomp.to_f
+    data = lines.filtermap { |line|
+      f = line.chomp
+      f.length == 0 ? false : f.to_f
     }
-    sum = data.reduce(:+)
-    average = sum.to_f / data.count.to_f
+    average = data.average
   end
   average
 end
@@ -73,7 +74,7 @@ def update_full_avg(average, options, result, time1)
 
     if result || diff >= average / 2.0
       file = File.new(full_avg_file(options), 'a+')
-      file.write("#{diff}")
+      file.puts(diff)
       file.close
     end
   end
@@ -139,7 +140,7 @@ end
 
 def output_lines(output, options)
   IO.write(options[:log_file], output) if options[:write_log]
-  lines = output.lines.map(&:chomp)
+  lines = output.lines.chompall
   output.clear
 
   found = false

@@ -68,7 +68,7 @@ Here are the descriptions for the scripts:
       * `-l` or `--write-log` to write all of the output to a log file (default is to not write to a log file)
       * `-f NAME` or `--log-file NAME` to set the log file name to `NAME` (default is `build.log`)
    * **displays:** a Growl notification indicating success or failure
-   * **requires:** Ruby, maven, Growl, `growlnotify`, and `lib/format.rb`
+   * **requires:** Ruby, maven, Growl, `growlnotify`, `lib/format.rb`, and `lib/maputil.rb`
    * **note:** `growlnotify` is available in Homebrew and from the Growl website
 * `mvr`: a Ruby script that allows you to rename a group of files via regular expression
    * **parameters:**
