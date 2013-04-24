@@ -17,6 +17,7 @@
 .Op Fl n | -no-sticky
 .Op Fl a | -display-all
 .Op Fl k | -track-average
+.Op Fl u | -track-full-average
 .Op Fl c | -colored
 .Op Fl l | -write-log
 .Op Fl f Ar name | Fl -log-file Ar name
@@ -36,6 +37,12 @@ make the growl notification non-sticky (default is sticky)
 display all output (default is to only display the output after a compile failure, build success, or test result start line)
 .It Fl k | -track-average
 update the average (stored in avg.txt) and also display a progress bar (if the timer is enabled) while the build is in progress (default is not to do track average or display progress bar)
+.It Fl u | -track-full-average
+update the average list (stored in "avg-skip.txt" or "avg-test.txt") and also display a progress bar while the build is in progress (default is to not do track average or display progress bar) (including this option will cause the progress bar to use the average calculated from the average list if available, but if 
+.Fl k
+or
+.Fl -track-average
+is specified, "avg.txt" will still be updated)
 .It Fl c | -colored
 display some colors in the timer/progress message
 .It Fl l | -write-log

@@ -63,6 +63,7 @@ Here are the descriptions for the scripts:
       * `-n` or `--no-sticky` to make the growl notification non-sticky (default is sticky)
       * `-a` or `--display-all` to display all output (default is to only display the output after a compile failure, build success, or test result start line)
       * `-k` or `--track-average` to update the average (stored in `avg.txt`) and also display a progress bar while the build is in progress (default is not to do track average or display progress bar)
+      * `-u` or `--track-full-average` to update the average list (stored in `avg-skip.txt` or `avg-test.txt`) and also display a progress bar while the build is in progress (default is to not do track average or display progress bar) (including this option will cause the progress bar to use the average calculated from the average list if available, but if `-k` or `--track-average` is specified, `avg.txt` will still be updated)
       * `-c` or `--colored` to display some colors in the timer/progress message
       * `-l` or `--write-log` to write all of the output to a log file (default is to not write to a log file)
       * `-f NAME` or `--log-file NAME` to set the log file name to `NAME` (default is `build.log`)
