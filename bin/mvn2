@@ -17,26 +17,24 @@ options = {
 }
 
 def add_option(options, opts, short_name, long_name, opt_name)
-  opts.on(short_name, long_name) do
-    options[opt_name] = true
-  end
+  opts.on(short_name, long_name) { options[opt_name] = true }
 end
 
-option_parser = OptionParser.new do |opts|
+option_parser = OptionParser.new { |opts|
   add_option(options, opts, '-t', '--timer', :do_timer)
   add_option(options, opts, '-s', '--skip-tests', :skip_tests)
   add_option(options, opts, '-n', '--no-sticky', :no_sticky)
   add_option(options, opts, '-a', '--display-all', :display_all)
   add_option(options, opts, '-k', '--track-average', :track_average)
   add_option(options, opts, '-c', '--colored', :colored)
-end
+}
 
 option_parser.parse!
 
-Signal.trap('SIGINT') do
+Signal.trap('SIGINT') {
   puts "\nBuild Canceled\n\n"
   exit 1
-end
+}
 
 st = options[:skip_tests] ? ' -D skipTests' : ''
 
@@ -104,7 +102,7 @@ def output_lines(output)
 
   found = false
 
-  lines.each do |line|
+  lines.each { |line|
     if found
       puts line
     elsif line.start_with?('[ERROR] COMPILATION ERROR :') || line.start_with?('Results :')
@@ -114,29 +112,25 @@ def output_lines(output)
       puts '[INFO] ------------------------------------------------------------------------'
       puts line
       found = true
-    end
-  end
+    end }
 
-  unless found
-    lines.each do |line|
-      puts line
+  lines.each { |line| puts line } unless found
+end
+
+def start_timer_thread(average, options, time1)
+  Thread.new(time1, average, options[:colored]) { |start_time, avg, colored|
+    amin, asec = get_time_parts(avg)
+    while true
+      print "\r#{get_timer_message(amin, asec, avg, colored, start_time, Time.now)}"
+      sleep(0.05)
     end
-  end
+  }
 end
 
 def run_and_filter_output(options, st)
-  thread = nil
   average, averages, counts = read_avg(options)
   time1 = Time.now
-  if options[:do_timer]
-    thread = Thread.new(time1, average, options[:colored]) do |start_time, avg, colored|
-      amin, asec = get_time_parts(avg)
-      while true
-        print "\r#{get_timer_message(amin, asec, avg, colored, start_time, Time.now)}"
-        sleep(0.05)
-      end
-    end
-  end
+  thread = options[:do_timer] ? start_timer_thread(average, options, time1) : nil
 
   output = `mvn clean install#{st} 2>&1`
   result = $?.success?
