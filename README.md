@@ -64,6 +64,8 @@ Here are the descriptions for the scripts:
       * `-a` or `--display-all` to display all output (default is to only display the output after a compile failure, build success, or test result start line)
       * `-k` or `--track-average` to update the average (stored in `avg.txt`) and also display a progress bar while the build is in progress (default is not to do track average or display progress bar)
       * `-c` or `--colored` to display some colors in the timer/progress message
+      * `-l` or `--write-log` to write all of the output to a log file (default is to not write to a log file)
+      * `-f NAME` or `--log-file NAME` to set the log file name to `NAME` (default is `build.log`)
    * **displays:** a Growl notification indicating success or failure
    * **requires:** Ruby, maven, Growl, `growlnotify`, and `lib/format.rb`
    * **note:** `growlnotify` is available in Homebrew and from the Growl website

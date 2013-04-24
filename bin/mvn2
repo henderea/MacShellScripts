@@ -14,10 +14,16 @@ options = {
     display_all: false,
     track_average: false,
     colored: false,
+    write_log: false,
+    log_file: 'build.log',
 }
 
 def add_option(options, opts, short_name, long_name, opt_name)
   opts.on(short_name, long_name) { options[opt_name] = true }
+end
+
+def add_option_with_param(options, opts, short_name, long_name, opt_name)
+  opts.on(short_name, long_name) { |name| options[opt_name] = name }
 end
 
 option_parser = OptionParser.new { |opts|
@@ -27,6 +33,8 @@ option_parser = OptionParser.new { |opts|
   add_option(options, opts, '-a', '--display-all', :display_all)
   add_option(options, opts, '-k', '--track-average', :track_average)
   add_option(options, opts, '-c', '--colored', :colored)
+  add_option(options, opts, '-l', '--write-log', :write_log)
+  add_option_with_param(options, opts, '-f', '--log-file NAME', :log_file)
 }
 
 option_parser.parse!
@@ -96,7 +104,8 @@ def get_time_parts(time)
   return (time / 60.0).floor, '%06.3f' % (time % 60)
 end
 
-def output_lines(output)
+def output_lines(output, options)
+  IO.write(options[:log_file], output) if options[:write_log]
   lines = output.lines.map(&:chomp)
   output.clear
 
@@ -142,7 +151,7 @@ def run_and_filter_output(options, st)
     print "\n"
   end
 
-  output_lines(output)
+  output_lines(output, options)
   result
 end
 

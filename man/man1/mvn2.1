@@ -12,29 +12,37 @@
 .Nd Runs a maven build with special features
 .Sh SYNOPSIS             \" Section Header - required - don't modify
 .Nm
-.Op Fl t|--timer
-.Op Fl s|--skip-tests
-.Op Fl n|--no-sticky
-.Op Fl a|--display-all
-.Op Fl k|--track-average
-.Op Fl c|--colored
+.Op Fl t | -timer
+.Op Fl s | -skip-tests
+.Op Fl n | -no-sticky
+.Op Fl a | -display-all
+.Op Fl k | -track-average
+.Op Fl c | -colored
+.Op Fl l | -write-log
+.Op Fl f Ar name | Fl -log-file Ar name
 .Sh DESCRIPTION          \" Section Header - required - don't modify
 .Nm
 is a Ruby script that runs a maven build, including (or not including) tests, and only outputs the lines that come after a compile failure, build success, or test result start line
 .Pp
 A list of flags and their descriptions:
-.Bl -tag -width "-k|--track-average " -indent  \" Differs from above in tag removed 
-.It Fl t|--timer
+.Bl -tag -width "-f name | --log-file name " -indent  \" Differs from above in tag removed 
+.It Fl t | -timer
 display a timer while the build is in progress (default is display nothing)
-.It Fl s|--skip-tests
+.It Fl s | -skip-tests
 skip tests (default is running tests)
-.It Fl n|--no-sticky
+.It Fl n | -no-sticky
 make the growl notification non-sticky (default is sticky)
-.It Fl a|--display-all
+.It Fl a | -display-all
 display all output (default is to only display the output after a compile failure, build success, or test result start line)
-.It Fl k|--track-average
+.It Fl k | -track-average
 update the average (stored in avg.txt) and also display a progress bar (if the timer is enabled) while the build is in progress (default is not to do track average or display progress bar)
-.It Fl c|--colored
+.It Fl c | -colored
 display some colors in the timer/progress message
+.It Fl l | -write-log
+write all of the output to a log file (default is to not write to a log file)
+.It Fl f Ar name | Fl -log-file Ar name
+set the log file name to
+.Ar name
+(default is "build.log")
 .El                      \" Ends the list
 .Pp
