@@ -124,7 +124,7 @@ def output_lines(output)
   end
 end
 
-def run_and_filter_output(options, st, thread)
+def run_and_filter_output(options, st)
   thread = nil
   average, averages, counts = read_avg(options)
   time1 = Time.now
@@ -152,6 +152,6 @@ def run_and_filter_output(options, st, thread)
   result
 end
 
-result = options[:display_all] ? system("mvn clean install#{st} 2>&1") : run_and_filter_output(options, st, thread)
+result = options[:display_all] ? system("mvn clean install#{st} 2>&1") : run_and_filter_output(options, st)
 
 `growlnotify -n Terminal -a Terminal#{(options[:no_sticky] ? '' : ' -s')} -m "#{(options[:skip_tests] ? 'Build' : 'Tests')} #{(result ? 'Successful' : 'Failed')}" -t "mvn clean install#{st}"`
