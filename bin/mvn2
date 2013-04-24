@@ -34,6 +34,11 @@ end
 
 option_parser.parse!
 
+Signal.trap('SIGINT') do
+  puts "\nBuild Canceled\n\n"
+  exit 1
+end
+
 thread = nil
 
 st = ''
@@ -91,7 +96,7 @@ else
   output = `mvn clean install#{st} 2>&1`
   result = $?.success?
 
-  if options[:track_average] && result
+  if options[:track_average]
     time2 = Time.now
 
     diff = time2 - time1
