@@ -17,6 +17,7 @@
 .Op Fl n|--no-sticky
 .Op Fl a|--display-all
 .Op Fl k|--track-average
+.Op Fl c|--colored
 .Sh DESCRIPTION          \" Section Header - required - don't modify
 .Nm
 is a Ruby script that runs a maven build, including (or not including) tests, and only outputs the lines that come after a compile failure, build success, or test result start line
@@ -33,5 +34,7 @@ make the growl notification non-sticky (default is sticky)
 display all output (default is to only display the output after a compile failure, build success, or test result start line)
 .It Fl k|--track-average
 update the average (stored in avg.txt) and also display a progress bar (if the timer is enabled) while the build is in progress (default is not to do track average or display progress bar)
+.It Fl c|--colored
+display some colors in the timer/progress message
 .El                      \" Ends the list
 .Pp

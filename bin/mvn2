@@ -1,6 +1,11 @@
 #!/usr/bin/env ruby
 
+$LOAD_PATH << File.dirname(__FILE__)
+
+require 'lib/format'
 require 'optparse'
+
+include Format
 
 options = {
     do_timer: false,
@@ -8,6 +13,7 @@ options = {
     no_sticky: false,
     disp_all: false,
     track_average: false,
+    colored: false,
 }
 
 option_parser = OptionParser.new do |opts|
@@ -29,6 +35,10 @@ option_parser = OptionParser.new do |opts|
 
   opts.on('-k', '--track-average') do
     options[:track_average] = true
+  end
+
+  opts.on('-c', '--colored') do
+    options[:colored] = true
   end
 end
 
@@ -74,18 +84,22 @@ else
   end
   time1 = Time.now
   if options[:do_timer]
-    thread = Thread.new(time1, average) do |start_time, avg|
+    thread = Thread.new(time1, average, options[:colored]) do |start_time, avg, colored|
+      amin = (avg / 60.0).floor
+      asec = '%06.3f' % (avg % 60)
       while true
         time = Time.now
         diff = time - start_time
         m = (diff / 60.0).floor
         s = '%06.3f' % (diff % 60)
         msg = "#{m}:#{s}"
+        msg = colorize("#{m}:#{s}", :green) if colored
         unless avg == 0
           progress = ((diff.to_f / avg.to_f) * 100.0)
           bars = progress.floor
           bars = 100 if bars > 100
-          msg = "[#{'=' * bars}>#{' ' * (100 - bars)}] #{m}:#{s} (~#{'%.3f' % progress}%)"
+          msg = "[#{'=' * bars}>#{' ' * (100 - bars)}] #{m}:#{s} (~#{'%.3f' % progress}%) (average: #{amin}:#{asec})"
+          msg = "[#{'=' * bars}>#{' ' * (100 - bars)}] #{colorize("#{m}:#{s}", :green)} (#{colorize("~#{'%.3f' % progress}%", :purple)}) (average: #{colorize("#{amin}:#{asec}", :cyan)})" if colored
         end
         print "\r#{msg}"
         sleep(0.05)
@@ -132,7 +146,7 @@ else
     elsif line.start_with?('[ERROR] COMPILATION ERROR :') || line.start_with?('Results :')
       puts line
       found = true
-    elsif line.start_with?('[INFO] BUILD SUCCESS')
+    elsif line.start_with?('[INFO] BUILD SUCCESS') || line.start_with?('[INFO] Reactor Summary:')
       puts '[INFO] ------------------------------------------------------------------------'
       puts line
       found = true
