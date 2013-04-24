@@ -89,7 +89,7 @@ def update_avg(average, averages, counts, options, result, time1)
     time2 = Time.now
     diff = time2 - time1
 
-    unless diff < average / 2.0
+    if result || diff >= average / 2.0
       options[:skip_tests] ? calc_new_avg(averages, counts, diff, 0) : calc_new_avg(averages, counts, diff, 1)
       IO.write('avg.txt', "#{averages[0]};#{counts[0]}\n#{averages[1]};#{counts[1]}")
     end
