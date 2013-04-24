@@ -101,17 +101,19 @@ else
 
     diff = time2 - time1
 
-    if options[:skip_tests]
-      sum = averages[0] * counts[0] + diff
-      counts[0] += 1
-      averages[0] = sum / counts[0]
-    else
-      sum = averages[1] * counts[1] + diff
-      counts[1] += 1
-      averages[1] = sum / counts[1]
-    end
+    unless diff < average / 2.0
+      if options[:skip_tests]
+        sum = averages[0] * counts[0] + diff
+        counts[0] += 1
+        averages[0] = sum / counts[0]
+      else
+        sum = averages[1] * counts[1] + diff
+        counts[1] += 1
+        averages[1] = sum / counts[1]
+      end
 
-    IO.write('avg.txt', "#{averages[0]};#{counts[0]}\n#{averages[1]};#{counts[1]}")
+      IO.write('avg.txt', "#{averages[0]};#{counts[0]}\n#{averages[1]};#{counts[1]}")
+    end
   end
 
   unless thread.nil?
