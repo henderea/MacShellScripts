@@ -4,6 +4,7 @@ $LOAD_PATH << File.dirname(__FILE__)
 
 require 'lib/maputil'
 require 'lib/format'
+require 'lib/kmeans'
 require 'optparse'
 
 include Format
@@ -18,6 +19,7 @@ options = {
     colored:            false,
     write_log:          false,
     log_file:           'build.log',
+    advanced_average:   false,
 }
 
 def add_option(options, opts, short_name, long_name, opt_name)
@@ -38,6 +40,7 @@ option_parser = OptionParser.new { |opts|
   add_option(options, opts, '-c', '--colored', :colored)
   add_option(options, opts, '-l', '--write-log', :write_log)
   add_option_with_param(options, opts, '-f', '--log-file NAME', :log_file)
+  add_option(options, opts, '-d', '--advanced-average', :advanced_average)
 }
 
 option_parser.parse!
@@ -65,6 +68,20 @@ def read_full_avg(options, avg)
     average = data.average
   end
   average
+end
+
+def read_advanced_avg(options, avg)
+  averages  = [avg]
+  file_name = full_avg_file(options)
+  if options[:track_full_average] && options[:advanced_average] && File.exist?(file_name)
+    lines    = IO.readlines(file_name)
+    data     = lines.filtermap { |line|
+      f = line.chomp
+      f.length == 0 ? false : f.to_f
+    }
+    averages = data.nmeans
+  end
+  averages
 end
 
 def update_full_avg(average, options, result, time1)
@@ -128,8 +145,14 @@ def get_avg_message(amin, asec, avg, colored, diff, m, s)
   "[#{'=' * bars}>#{' ' * (100 - bars)}] #{colorize_if_should("#{m}:#{s}", :green, colored)} (#{colorize_if_should("~#{'%.3f' % progress}%", :purple, colored)}) (average: #{colorize_if_should("#{amin}:#{asec}", :cyan, colored)})"
 end
 
-def get_timer_message(amin, asec, avg, colored, start_time, time)
+def get_closest(averages, time)
+  averages.min { |a, b| (a - time).abs <=> (b - time).abs}
+end
+
+def get_timer_message(avgs, colored, start_time, time)
   diff = time - start_time
+  avg = get_closest(avgs, diff)
+  amin, asec = get_time_parts(avg)
   m, s = get_time_parts(diff)
   (avg == 0) ? colorize_if_should("#{m}:#{s}", :green, colored) : get_avg_message(amin, asec, avg, colored, diff, m, s)
 end
@@ -160,11 +183,10 @@ def output_lines(output, options)
   lines.each { |line| puts line } unless found
 end
 
-def start_timer_thread(average, options, time1)
-  Thread.new(time1, average, options[:colored]) { |start_time, avg, colored|
-    amin, asec = get_time_parts(avg)
+def start_timer_thread(averages, options, time1)
+  Thread.new(time1, averages, options[:colored]) { |start_time, avgs, colored|
     while true
-      print "\r#{get_timer_message(amin, asec, avg, colored, start_time, Time.now)}"
+      print "\r#{get_timer_message(avgs, colored, start_time, Time.now)}"
       sleep(0.05)
     end
   }
@@ -173,8 +195,9 @@ end
 def run_and_filter_output(options, st)
   average, averages, counts = read_avg(options)
   average                   = read_full_avg(options, average)
+  averages2                 = read_advanced_avg(options, average)
   time1                     = Time.now
-  thread                    = options[:do_timer] ? start_timer_thread(average, options, time1) : nil
+  thread                    = options[:do_timer] ? start_timer_thread(averages2, options, time1) : nil
 
   output = `mvn clean install#{st} 2>&1`
   result = $?.success?

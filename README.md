@@ -67,6 +67,7 @@ Here are the descriptions for the scripts:
       * `-c` or `--colored` to display some colors in the timer/progress message
       * `-l` or `--write-log` to write all of the output to a log file (default is to not write to a log file)
       * `-f NAME` or `--log-file NAME` to set the log file name to `NAME` (default is `build.log`)
+      * `-d` or `--advanced-average` to use k-means (with minimum optimal k) to find a list of averages and use the closest one for the progress bar and displayed average (default is to use overall average)
    * **displays:** a Growl notification indicating success or failure
    * **requires:** Ruby, maven, Growl, `growlnotify`, `lib/format.rb`, and `lib/maputil.rb`
    * **note:** `growlnotify` is available in Homebrew and from the Growl website

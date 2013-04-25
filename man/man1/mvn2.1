@@ -21,6 +21,7 @@
 .Op Fl c | -colored
 .Op Fl l | -write-log
 .Op Fl f Ar name | Fl -log-file Ar name
+.Op Fl d | -advanced-average
 .Sh DESCRIPTION          \" Section Header - required - don't modify
 .Nm
 is a Ruby script that runs a maven build, including (or not including) tests, and only outputs the lines that come after a compile failure, build success, or test result start line
@@ -51,5 +52,7 @@ write all of the output to a log file (default is to not write to a log file)
 set the log file name to
 .Ar name
 (default is "build.log")
+.It Fl d | -advanced-average
+use k-means (with minimum optimal k) to find a list of averages and use the closest one for the progress bar and displayed average (default is to use overall average)
 .El                      \" Ends the list
 .Pp
