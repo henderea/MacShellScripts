@@ -12,6 +12,7 @@
 .Nd Renames a group of files and/or folders using a regular expression
 .Sh SYNOPSIS             \" Section Header - required - don't modify
 .Nm
+.Op Fl e | -exclude-extension
 .Ao Ar find Ac
 .Ao Ar replace Ac
 file ...                 \" Arguments
@@ -27,7 +28,9 @@ list of files can be as many items as you want, and you can use typical wildcard
 will be interpreted as a file/folder name that should be included in the list of what to rename.
 .Pp                      \" Inserts a space
 Parameters:
-.Bl -tag -width "<replace>" -compact  \" Begins a tagged list 
+.Bl -tag -width "-e | --exclude-extension " -compact  \" Begins a tagged list 
+.It Fl e | -exclude-extension
+exclude the extension of the file from the pattern matching/replacement
 .It Ao Ar find Ac
 The regular expression for the renaming
 .It Ao Ar replace Ac

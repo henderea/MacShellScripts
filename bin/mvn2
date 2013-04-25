@@ -9,15 +9,15 @@ require 'optparse'
 include Format
 
 options = {
-    do_timer: false,
-    skip_tests: false,
-    no_sticky: false,
-    display_all: false,
-    track_average: false,
+    do_timer:           false,
+    skip_tests:         false,
+    no_sticky:          false,
+    display_all:        false,
+    track_average:      false,
     track_full_average: false,
-    colored: false,
-    write_log: false,
-    log_file: 'build.log',
+    colored:            false,
+    write_log:          false,
+    log_file:           'build.log',
 }
 
 def add_option(options, opts, short_name, long_name, opt_name)
@@ -54,11 +54,11 @@ def full_avg_file(options)
 end
 
 def read_full_avg(options, avg)
-  average = avg
+  average   = avg
   file_name = full_avg_file(options)
   if options[:track_full_average] && File.exist?(file_name)
-    lines = IO.readlines(file_name)
-    data = lines.filtermap { |line|
+    lines   = IO.readlines(file_name)
+    data    = lines.filtermap { |line|
       f = line.chomp
       f.length == 0 ? false : f.to_f
     }
@@ -70,7 +70,7 @@ end
 def update_full_avg(average, options, result, time1)
   if options[:track_full_average] && (result || !options[:skip_tests])
     time2 = Time.now
-    diff = time2 - time1
+    diff  = time2 - time1
 
     if result || diff >= average / 2.0
       file = File.new(full_avg_file(options), 'a+')
@@ -81,16 +81,16 @@ def update_full_avg(average, options, result, time1)
 end
 
 def get_data(averages, counts, lines, ind)
-  parts = lines[ind].chomp.split(';')
+  parts         = lines[ind].chomp.split(';')
   averages[ind] = parts[0].to_f
-  counts[ind] = parts[1].to_i
+  counts[ind]   = parts[1].to_i
   averages[ind] = 0 if counts[ind] == 0
 end
 
 def read_avg(options)
-  average = 0
+  average  = 0
   averages = [0, 0]
-  counts = [0, 0]
+  counts   = [0, 0]
   if options[:track_average] && File.exist?('avg.txt')
     lines = IO.readlines('avg.txt')
     get_data(averages, counts, lines, 0)
@@ -101,15 +101,15 @@ def read_avg(options)
 end
 
 def calc_new_avg(averages, counts, diff, ind)
-  sum = averages[ind] * counts[ind] + diff
-  counts[ind] += 1
+  sum           = averages[ind] * counts[ind] + diff
+  counts[ind]   += 1
   averages[ind] = sum / counts[ind]
 end
 
 def update_avg(average, averages, counts, options, result, time1)
   if options[:track_average] && (result || !options[:skip_tests])
     time2 = Time.now
-    diff = time2 - time1
+    diff  = time2 - time1
 
     if result || diff >= average / 2.0
       options[:skip_tests] ? calc_new_avg(averages, counts, diff, 0) : calc_new_avg(averages, counts, diff, 1)
@@ -124,7 +124,7 @@ end
 
 def get_avg_message(amin, asec, avg, colored, diff, m, s)
   progress = ((diff.to_f / avg.to_f) * 100.0)
-  bars = [progress.floor, 100].min
+  bars     = [progress.floor, 100].min
   "[#{'=' * bars}>#{' ' * (100 - bars)}] #{colorize_if_should("#{m}:#{s}", :green, colored)} (#{colorize_if_should("~#{'%.3f' % progress}%", :purple, colored)}) (average: #{colorize_if_should("#{amin}:#{asec}", :cyan, colored)})"
 end
 
@@ -172,9 +172,9 @@ end
 
 def run_and_filter_output(options, st)
   average, averages, counts = read_avg(options)
-  average = read_full_avg(options, average)
-  time1 = Time.now
-  thread = options[:do_timer] ? start_timer_thread(average, options, time1) : nil
+  average                   = read_full_avg(options, average)
+  time1                     = Time.now
+  thread                    = options[:do_timer] ? start_timer_thread(average, options, time1) : nil
 
   output = `mvn clean install#{st} 2>&1`
   result = $?.success?

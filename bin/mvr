@@ -3,8 +3,27 @@
 $LOAD_PATH << File.dirname(__FILE__)
 
 require 'lib/format'
+require 'optparse'
 
 include Format
+
+options = {
+    exclude_extension: false
+}
+
+def add_option(options, opts, short_name, long_name, opt_name)
+  opts.on(short_name, long_name) { options[opt_name] = true }
+end
+
+def add_option_with_param(options, opts, short_name, long_name, opt_name)
+  opts.on(short_name, long_name) { |name| options[opt_name] = name }
+end
+
+option_parser = OptionParser.new { |opts|
+  add_option(options, opts, '-e', '--exclude-extension', :exclude_extension)
+}
+
+option_parser.parse!
 
 pattern = ARGV.shift
 if pattern == 'help' || pattern == '--help' || pattern == '-h'
@@ -35,11 +54,18 @@ mappings    = Hash.new
 encountered = Array.new
 duplicated  = Array.new
 ARGV.each do |filename|
-  file_basename        = File.basename(filename)
-  directory            = filename[0, (filename.length - file_basename.length)]
-  replacement_basename = file_basename.gsub(regex, replacement)
-  replacement_name     = "#{directory}#{replacement_basename}"
-  mappings[filename]   = replacement_name
+  file_basename = File.basename(filename)
+  directory     = filename[0, (filename.length - file_basename.length)]
+  file_ext             = File.extname(file_basename)
+  if options[:exclude_extension] && file_ext.length > 0
+    file_basename2       = file_basename[0...-file_ext.length]
+    replacement_basename = file_basename2.gsub(regex, replacement)
+    replacement_name     = "#{directory}#{replacement_basename}#{file_ext}"
+  else
+    replacement_basename = file_basename.gsub(regex, replacement)
+    replacement_name     = "#{directory}#{replacement_basename}"
+  end
+  mappings[filename] = replacement_name
   if encountered.include?(replacement_name)
     unless duplicated.include?(replacement_name)
       duplicated << replacement_name
@@ -78,13 +104,13 @@ puts border
 
 mappings.each do |from, to|
   from2 = from.center(len1)
-  to2 = to.center(len2)
+  to2   = to.center(len2)
   if from == to
     from2 = colorize(from2, :black, :white)
-    to2 = colorize(to2, :black, :white)
+    to2   = colorize(to2, :black, :white)
   elsif duplicated.include?(to)
     from2 = colorize(from2, :white, :red)
-    to2 = colorize(to2, :white, :red)
+    to2   = colorize(to2, :white, :red)
   end
   puts "| #{from2} | #{to2} |"
 end

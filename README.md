@@ -71,10 +71,12 @@ Here are the descriptions for the scripts:
    * **requires:** Ruby, maven, Growl, `growlnotify`, `lib/format.rb`, and `lib/maputil.rb`
    * **note:** `growlnotify` is available in Homebrew and from the Growl website
 * `mvr`: a Ruby script that allows you to rename a group of files via regular expression
-   * **parameters:**
+   * **required parameters:**
       * match pattern
       * replacement pattern (use `\1` for first match, `\2` for second match, and so on)
       * filenames
+   * **optional parameters:**
+      * `-e` or `--exclude-extension` to exclude the extension of the file from the pattern matching/replacement
    * **displays:** prints a color-coded list of file names and their replacement names; also asks for confirmation
       * **Color Coding:** grey background for no change, red background for conflict
    * **action:** if you type `y` or `yes` (case insensitive), it will rename the files; anything else will cause it to cancel the operation
