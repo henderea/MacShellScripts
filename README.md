@@ -69,7 +69,7 @@ Here are the descriptions for the scripts:
       * `-f NAME` or `--log-file NAME` to set the log file name to `NAME` (default is `build.log`)
       * `-d` or `--advanced-average` to use k-means (with minimum optimal k) to find a list of averages and use the closest one for the progress bar and displayed average (default is to use overall average)
    * **displays:** a Growl notification indicating success or failure
-   * **requires:** Ruby, maven, Growl, `growlnotify`, `lib/format.rb`, and `lib/maputil.rb`
+   * **requires:** Ruby, maven, Growl, `growlnotify`, `lib/format.rb`, `lib/maputil.rb`, and `lib/kmeans.rb`
    * **note:** `growlnotify` is available in Homebrew and from the Growl website
 * `mvr`: a Ruby script that allows you to rename a group of files via regular expression
    * **required parameters:**
@@ -81,6 +81,15 @@ Here are the descriptions for the scripts:
    * **displays:** prints a color-coded list of file names and their replacement names; also asks for confirmation
       * **Color Coding:** grey background for no change, red background for conflict
    * **action:** if you type `y` or `yes` (case insensitive), it will rename the files; anything else will cause it to cancel the operation
+   * **note:** you may need to change the path on the first line of the file to point to your installation of Ruby, but hopefully it will work properly as-is
+   * **requires:** Ruby and `lib/format.rb`
+* `nmeans`: calculate the nmeans on a set of data
+   * **optional parameters:**
+      * `-f FILE` or `--file FILE` to read data from the file `FILE`, assuming 1 entry per line (default is to read from `stdin` (EOF or blank line signals end of input))
+      * `-1` or `--one-per-line` to output one per line; disables default delimeter
+      * `-d DELIM` or `--delimiter DELIM` to use `DELIM` as the delimiter; overrides delimiter disable of `-1`; leaving `DELIM` blank will disable the delimiter (default delimeter is ', ' (comma followed by a space))
+   * **displays:** the k-means for the clusters, using the minimum optimal k
+   * **requires:** Ruby, `lib/maputil.rb`, and `lib/kmeans.rb`
    * **note:** you may need to change the path on the first line of the file to point to your installation of Ruby, but hopefully it will work properly as-is
    * **requires:** Ruby and `lib/format.rb`
 * `openf`: open the first file in the folder

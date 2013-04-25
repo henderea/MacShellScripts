@@ -5,15 +5,19 @@ require 'maputil'
 def f_test(clusters, means, cnt, avg)
   ev = 0
   (0...means.count).each { |i|
-    ni = clusters[i].count
-    ev += ni * ((means[i] - avg) ** 2)
+    unless clusters[i].empty?
+      ni = clusters[i].count
+      ev += ni * ((means[i] - avg) ** 2)
+    end
   }
   ev /= means.count - 1
   uv = 0
   (0...means.count).each { |i|
-    (0...clusters[i].count).each { |j|
-      uv += (clusters[i][j] - means[i]) * (clusters[i][j] - means[i])
-    }
+    unless clusters[i].empty?
+      (0...clusters[i].count).each { |j|
+        uv += (clusters[i][j] - means[i]) * (clusters[i][j] - means[i])
+      }
+    end
   }
   uv /= (cnt - means.count)
   (ev / uv)
@@ -22,12 +26,14 @@ end
 def f_test2(clusters, means, cnt)
   uv = 0
   (0...means.count).each { |i|
-    tmp = 0
-    (0...clusters[i].count).each { |j|
-      tmp += (clusters[i][j] - means[i]) ** 2
-    }
-    tmp /= clusters[i].count
-    uv  += Math.sqrt(tmp)
+    unless clusters[i].empty?
+      tmp = 0
+      (0...clusters[i].count).each { |j|
+        tmp += (clusters[i][j] - means[i]) ** 2
+      }
+      tmp /= clusters[i].count
+      uv  += Math.sqrt(tmp)
+    end
   }
   (uv / (cnt - means.count))
 end
@@ -44,12 +50,6 @@ module Enumerable
     cs  = get_clusters(ks)
     ft  = f_test(cs, ks, cnt, avg)
     ft2 = f_test2(cs, ks, cnt)
-    #puts kso.inspect
-    #puts ks.inspect
-    #puts cso.inspect
-    #puts cs.inspect
-    #puts fto
-    #puts ft2
     if ft2 >= fto
       return kso
     end
@@ -57,7 +57,6 @@ module Enumerable
       kso = ks
       fto = ft
       ks  = kmeans(k)
-      #puts ks.inspect
       cs  = get_clusters(ks)
       ft  = f_test(cs, ks, cnt, avg)
       if ((ft - fto) / fto) < threshold

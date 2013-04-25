@@ -41,11 +41,11 @@ option_parser = OptionParser.new { |opts|
   add_integer_option_with_param(options, opts, '-h', '--height HEIGHT', :height)
 }
 
+option_parser.parse!
+
 def my_rand(min, max)
   (rand(max - min) + min).to_i
 end
-
-option_parser.parse!
 
 vals = []
 (0...options[:count]).each { |i|
