@@ -47,23 +47,16 @@ def my_rand(min, max)
   (rand(max - min) + min).to_i
 end
 
-vals = []
-(0...options[:count]).each { |i|
+vals = Array.new(options[:count]) {
   tmp = 0
-  12.times {
-    tmp += my_rand(options[:min1], options[:max1])
-  }
-  tmp     -= (options[:max1] - options[:min1]) * 3
-  vals[i] = tmp
+  12.times { tmp += my_rand(options[:min1], options[:max1]) }
+  (tmp - (options[:max1] - options[:min1]) * 3)
 }
 if options[:do_two]
-  (options[:count]...(options[:count] * 2)).each { |i|
+  vals += Array.new(options[:count]) {
     tmp = 0
-    12.times {
-      tmp += my_rand(options[:min2], options[:max2])
-    }
-    tmp     -= (options[:max2] - options[:min2]) * 3
-    vals[i] = tmp
+    12.times { tmp += my_rand(options[:min2], options[:max2]) }
+    tmp - (options[:max2] - options[:min2]) * 3
   }
 end
 

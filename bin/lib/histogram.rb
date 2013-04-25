@@ -8,19 +8,13 @@ module Enumerable
     ma = max
     diff = ma - mi
     step = diff.to_f / width.to_f
-    counts = []
-    (0...width).each { |i|
-      counts[i] = 0
-    }
+    counts = Array.new(width, 0)
     each { |v|
       i = ((v - mi).to_f / (step + 1).to_f).floor
       counts[i] += 1
     }
     max_y = counts.max
-    lines = []
-    (0...height).each { |i|
-      lines[i] = ' ' * width
-    }
+    lines = Array.new(height) { ' ' * width }
     (0...width).each { |i|
       h = ((counts[i].to_f / max_y.to_f) * height.to_f).round
       ((height - h)...height).each { |j|

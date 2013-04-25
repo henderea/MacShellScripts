@@ -94,10 +94,7 @@ module Enumerable
   end
 
   def get_clusters(means)
-    clusters = []
-    (0...means.count).each { |i|
-      clusters[i] = []
-    }
+    clusters = Array.new(means.count) { Array.new }
     each { |item|
       cluster  = false
       distance = false
