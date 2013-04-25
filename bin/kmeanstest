@@ -1,0 +1,76 @@
+#!/usr/bin/env ruby
+
+$LOAD_PATH << File.dirname(__FILE__)
+
+require 'lib/maputil'
+require 'lib/kmeans'
+require 'lib/histogram'
+require 'optparse'
+
+options = {
+    do_two: false,
+    count:  2500,
+    min1:   0,
+    max1:   500,
+    min2:   600,
+    max2:   1000,
+    width:  100,
+    height: 50,
+}
+
+def add_option(options, opts, short_name, long_name, opt_name)
+  opts.on(short_name, long_name) { options[opt_name] = true }
+end
+
+def add_option_with_param(options, opts, short_name, long_name, opt_name)
+  opts.on(short_name, long_name) { |name| options[opt_name] = name }
+end
+
+def add_integer_option_with_param(options, opts, short_name, long_name, opt_name)
+  opts.on(short_name, long_name, Integer) { |name| options[opt_name] = name }
+end
+
+option_parser = OptionParser.new { |opts|
+  add_option(options, opts, '-2', '--do-two', :do_two)
+  add_integer_option_with_param(options, opts, '-c', '--count COUNT', :count)
+  add_integer_option_with_param(options, opts, '-a', '--min-one MIN', :min1)
+  add_integer_option_with_param(options, opts, '-b', '--max-one MAX', :max1)
+  add_integer_option_with_param(options, opts, '-d', '--min-two MIN', :min2)
+  add_integer_option_with_param(options, opts, '-e', '--max-two MAX', :max2)
+  add_integer_option_with_param(options, opts, '-w', '--width WIDTH', :width)
+  add_integer_option_with_param(options, opts, '-h', '--height HEIGHT', :height)
+}
+
+def my_rand(min, max)
+  (rand(max - min) + min).to_i
+end
+
+option_parser.parse!
+
+vals = []
+(0...options[:count]).each { |i|
+  tmp = 0
+  12.times {
+    tmp += my_rand(options[:min1], options[:max1])
+  }
+  tmp     -= (options[:max1] - options[:min1]) * 3
+  vals[i] = tmp
+}
+if options[:do_two]
+  (options[:count]...(options[:count] * 2)).each { |i|
+    tmp = 0
+    12.times {
+      tmp += my_rand(options[:min2], options[:max2])
+    }
+    tmp     -= (options[:max2] - options[:min2]) * 3
+    vals[i] = tmp
+  }
+end
+
+ks = vals.nmeans
+
+lines = vals.histogram(ks, options[:width], options[:height])
+
+lines.each { |line|
+  puts line
+}
