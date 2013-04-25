@@ -53,7 +53,7 @@ module Enumerable
     if ft2 >= fto
       return kso
     end
-    (3..max_k).each { |k|
+    (3..[max_k, cnt].min).each { |k|
       kso = ks
       fto = ft
       ks  = kmeans(k)
