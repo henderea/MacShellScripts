@@ -4,13 +4,14 @@ require 'maputil'
 
 def f_test(clusters, means, cnt, avg)
   ev = 0
+  cnt2 = clusters.count { |i| !i.empty? }
   (0...means.count).each { |i|
     unless clusters[i].empty?
       ni = clusters[i].count
       ev += ni * ((means[i] - avg) ** 2)
     end
   }
-  ev /= means.count - 1
+  ev /= cnt2 - 1
   uv = 0
   (0...means.count).each { |i|
     unless clusters[i].empty?
@@ -19,12 +20,13 @@ def f_test(clusters, means, cnt, avg)
       }
     end
   }
-  uv /= (cnt - means.count)
+  uv /= (cnt - cnt2)
   (ev / uv)
 end
 
 def f_test2(clusters, means, cnt)
   uv = 0
+  cnt2 = clusters.count { |i| !i.empty? }
   (0...means.count).each { |i|
     unless clusters[i].empty?
       tmp = 0
@@ -35,7 +37,7 @@ def f_test2(clusters, means, cnt)
       uv  += Math.sqrt(tmp)
     end
   }
-  (uv / (cnt - means.count))
+  (uv / (cnt - cnt2))
 end
 
 module Enumerable
