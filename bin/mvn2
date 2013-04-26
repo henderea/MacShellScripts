@@ -54,9 +54,9 @@ Signal.trap('SIGINT') {
   exit 1
 }
 
-st  = options[:skip_tests] ? ' -D skipTests' : ''
+st   = options[:skip_tests] ? ' -D skipTests' : ''
 cmd2 = options[:package] ? 'package' : 'install'
-cmd = options[:command_override].nil? ? "mvn clean #{cmd2}#{st} 2>&1" : "mvn #{options[:command_override]} 2>&1"
+cmd  = options[:command_override].nil? ? "mvn clean #{cmd2}#{st} 2>&1" : "mvn #{options[:command_override]} 2>&1"
 
 def full_avg_file(options)
   pkg = options[:package] ? '-package' : ''
@@ -69,8 +69,12 @@ def read_full_avg(options, avg)
   if options[:command_override].nil? && options[:track_full_average] && File.exist?(file_name)
     lines   = IO.readlines(file_name)
     data    = lines.filtermap { |line|
-      f = line.chomp
-      f.length == 0 ? false : f.to_f
+      begin
+        f = line.chomp
+        f.length == 0 || (f =~ /^\d+(\.\d+)?$/).nil? ? false : f.to_f
+      rescue
+        false
+      end
     }
     average = data.average
   end
@@ -83,8 +87,12 @@ def read_advanced_avg(options, avg)
   if options[:command_override].nil? && options[:track_full_average] && options[:advanced_average] && File.exist?(file_name)
     lines    = IO.readlines(file_name)
     data     = lines.filtermap { |line|
-      f = line.chomp
-      f.length == 0 ? false : f.to_f
+      begin
+        f = line.chomp
+        f.length == 0 || (f =~ /^\d+(\.\d+)?$/).nil? ? false : f.to_f
+      rescue
+        false
+      end
     }
     averages = data.nmeans
   end

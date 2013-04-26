@@ -9,7 +9,7 @@ require 'optparse'
 options = {
     file:         nil,
     one_per_line: false,
-    delimiter: ', ',
+    delimiter:    ', ',
 }
 
 delimiter_set = false
@@ -36,7 +36,7 @@ option_parser = OptionParser.new { |opts|
   end
   opts.on('-d', '--delimiter [DELIMITER]') do |delim|
     options[:delimiter] = delim
-    delimiter_set = true
+    delimiter_set       = true
   end
 }
 
@@ -46,15 +46,28 @@ data = []
 
 if options[:file].nil?
   val = nil
-  i = 0
+  i   = 0
   begin
-    val = gets.chomp
-    data[i] = val.to_f
-    i += 1
+    begin
+      val = gets.chomp
+      if val.length > 0
+        data[i] = val.to_f
+        i       += 1
+      end
+    rescue
+      # ignored
+    end
   end until val.nil? || val.length <= 0 || $stdin.eof?
 else
   if File.exist?(options[:file])
-    data = IO.readlines(options[:file]).map { |v| v.chomp.to_f }
+    data = IO.readlines(options[:file]).filtermap { |v|
+      begin
+        f = v.chomp
+        f.length == 0 || (f =~ /^\d+(\.\d+)?$/).nil? ? false : f.to_f
+      rescue
+        false
+      end
+    }
   else
     puts "File '#{options[:file]}' does not exist!"
     exit 1
