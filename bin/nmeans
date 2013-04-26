@@ -63,15 +63,4 @@ end
 
 ks = data.nmeans
 
-printed = false
-
-ks.each { |k|
-  if printed
-    print options[:delimiter] unless options[:delimiter].nil?
-    print "\n" if options[:one_per_line]
-  end
-  printed = true
-  print k
-}
-
-print "\n"
+puts ks.join("#{options[:delimiter]}#{options[:one_per_line] ? "\n" : ''}")

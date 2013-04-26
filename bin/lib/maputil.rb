@@ -54,4 +54,8 @@ module Enumerable
   def chompall
     map(&:chomp)
   end
+
+  def join(join_str)
+    map(&:to_s).reduce { |a, b| a << join_str << b}
+  end
 end
