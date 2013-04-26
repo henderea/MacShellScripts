@@ -20,6 +20,7 @@ options = {
     write_log:          false,
     log_file:           'build.log',
     advanced_average:   false,
+    command_override: nil,
 }
 
 def add_option(options, opts, short_name, long_name, opt_name)
@@ -41,6 +42,7 @@ option_parser = OptionParser.new { |opts|
   add_option(options, opts, '-l', '--write-log', :write_log)
   add_option_with_param(options, opts, '-f', '--log-file NAME', :log_file)
   add_option(options, opts, '-d', '--advanced-average', :advanced_average)
+  add_option_with_param(options, opts, '-o', '--command-override', :command_override)
 }
 
 option_parser.parse!
@@ -51,6 +53,7 @@ Signal.trap('SIGINT') {
 }
 
 st = options[:skip_tests] ? ' -D skipTests' : ''
+cmd = options[:command_override].nil? ? "mvn clean install#{st} 2>&1" : "mvn #{options[:command_override]} 2>&1"
 
 def full_avg_file(options)
   options[:skip_tests] ? 'avg-skip.txt' : 'avg-test.txt'
@@ -59,7 +62,7 @@ end
 def read_full_avg(options, avg)
   average   = avg
   file_name = full_avg_file(options)
-  if options[:track_full_average] && File.exist?(file_name)
+  if options[:command_override].nil? && options[:track_full_average] && File.exist?(file_name)
     lines   = IO.readlines(file_name)
     data    = lines.filtermap { |line|
       f = line.chomp
@@ -73,7 +76,7 @@ end
 def read_advanced_avg(options, avg)
   averages  = [avg]
   file_name = full_avg_file(options)
-  if options[:track_full_average] && options[:advanced_average] && File.exist?(file_name)
+  if options[:command_override].nil? && options[:track_full_average] && options[:advanced_average] && File.exist?(file_name)
     lines    = IO.readlines(file_name)
     data     = lines.filtermap { |line|
       f = line.chomp
@@ -85,7 +88,7 @@ def read_advanced_avg(options, avg)
 end
 
 def update_full_avg(average, options, result, time1)
-  if options[:track_full_average] && (result || !options[:skip_tests])
+  if options[:command_override].nil? && options[:track_full_average] && (result || !options[:skip_tests])
     time2 = Time.now
     diff  = time2 - time1
 
@@ -108,7 +111,7 @@ def read_avg(options)
   average  = 0
   averages = [0, 0]
   counts   = [0, 0]
-  if options[:track_average] && File.exist?('avg.txt')
+  if options[:command_override].nil? && options[:track_average] && File.exist?('avg.txt')
     lines = IO.readlines('avg.txt')
     get_data(averages, counts, lines, 0)
     get_data(averages, counts, lines, 1)
@@ -124,7 +127,7 @@ def calc_new_avg(averages, counts, diff, ind)
 end
 
 def update_avg(average, averages, counts, options, result, time1)
-  if options[:track_average] && (result || !options[:skip_tests])
+  if options[:command_override].nil? && options[:track_average] && (result || !options[:skip_tests])
     time2 = Time.now
     diff  = time2 - time1
 
@@ -192,14 +195,14 @@ def start_timer_thread(averages, options, time1)
   }
 end
 
-def run_and_filter_output(options, st)
+def run_and_filter_output(options, cmd)
   average, averages, counts = read_avg(options)
   average                   = read_full_avg(options, average)
   averages2                 = read_advanced_avg(options, average)
   time1                     = Time.now
   thread                    = options[:do_timer] ? start_timer_thread(averages2, options, time1) : nil
 
-  output = `mvn clean install#{st} 2>&1`
+  output = `#{cmd}`
   result = $?.success?
 
   update_avg(average, averages, counts, options, result, time1)
@@ -214,6 +217,6 @@ def run_and_filter_output(options, st)
   result
 end
 
-result = options[:display_all] ? system("mvn clean install#{st} 2>&1") : run_and_filter_output(options, st)
+result = options[:display_all] ? system(cmd) : run_and_filter_output(options, cmd)
 
-`growlnotify -n Terminal -a Terminal#{(options[:no_sticky] ? '' : ' -s')} -m "#{(options[:skip_tests] ? 'Build' : 'Tests')} #{(result ? 'Successful' : 'Failed')}" -t "mvn clean install#{st}"`
+`growlnotify -n Terminal -a Terminal#{(options[:no_sticky] ? '' : ' -s')} -m "#{(options[:command_override].nil? ? (options[:skip_tests] ? 'Build' : 'Tests') : 'Operation')} #{(result ? 'Successful' : 'Failed')}" -t "#{cmd[0...-5]}"`

@@ -22,12 +22,13 @@
 .Op Fl l | -write-log
 .Op Fl f Ar name | Fl -log-file Ar name
 .Op Fl d | -advanced-average
+.Op Fl o Ar cmd | Fl -command-override Ar cmd
 .Sh DESCRIPTION          \" Section Header - required - don't modify
 .Nm
 is a Ruby script that runs a maven build, including (or not including) tests, and only outputs the lines that come after a compile failure, build success, or test result start line
 .Pp
 A list of flags and their descriptions:
-.Bl -tag -width "-f name | --log-file name " -indent  \" Differs from above in tag removed 
+.Bl -tag -width "-o cmd | --command-override cmd " -indent  \" Differs from above in tag removed 
 .It Fl t | -timer
 display a timer while the build is in progress (default is display nothing)
 .It Fl s | -skip-tests
@@ -54,5 +55,7 @@ set the log file name to
 (default is "build.log")
 .It Fl d | -advanced-average
 use k-means (with minimum optimal k) to find a list of averages and use the closest one for the progress bar and displayed average (default is to use overall average)
+.It Fl o Ar cmd | Fl -command-override Ar cmd
+override the maven command (disables average tracking options and skip test option) (default is "clean install" (with optional "-D skipTests") and not disabling any options)
 .El                      \" Ends the list
 .Pp
