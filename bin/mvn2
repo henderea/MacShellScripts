@@ -20,7 +20,7 @@ options = {
     write_log:          false,
     log_file:           'build.log',
     advanced_average:   false,
-    command_override: nil,
+    command_override:   nil,
 }
 
 def add_option(options, opts, short_name, long_name, opt_name)
@@ -42,7 +42,7 @@ option_parser = OptionParser.new { |opts|
   add_option(options, opts, '-l', '--write-log', :write_log)
   add_option_with_param(options, opts, '-f', '--log-file NAME', :log_file)
   add_option(options, opts, '-d', '--advanced-average', :advanced_average)
-  add_option_with_param(options, opts, '-o', '--command-override', :command_override)
+  add_option_with_param(options, opts, '-o', '--command-override CMD', :command_override)
 }
 
 option_parser.parse!
@@ -52,7 +52,7 @@ Signal.trap('SIGINT') {
   exit 1
 }
 
-st = options[:skip_tests] ? ' -D skipTests' : ''
+st  = options[:skip_tests] ? ' -D skipTests' : ''
 cmd = options[:command_override].nil? ? "mvn clean install#{st} 2>&1" : "mvn #{options[:command_override]} 2>&1"
 
 def full_avg_file(options)
@@ -149,14 +149,14 @@ def get_avg_message(amin, asec, avg, colored, diff, m, s)
 end
 
 def get_closest(averages, time)
-  averages.min { |a, b| (a - time).abs <=> (b - time).abs}
+  averages.min { |a, b| (a - time).abs <=> (b - time).abs }
 end
 
 def get_timer_message(avgs, colored, start_time, time)
-  diff = time - start_time
-  avg = get_closest(avgs, diff)
+  diff       = time - start_time
+  avg        = get_closest(avgs, diff)
   amin, asec = get_time_parts(avg)
-  m, s = get_time_parts(diff)
+  m, s       = get_time_parts(diff)
   (avg == 0) ? colorize_if_should("#{m}:#{s}", :green, colored) : get_avg_message(amin, asec, avg, colored, diff, m, s)
 end
 
