@@ -19,6 +19,13 @@ module Enumerable
     sum.to_f / count.to_f
   end
 
+  def std_dev
+    avg = average
+    cnt = count.to_f
+    su = summap { |v| (v.to_f - avg.to_f) ** 2 }
+    Math.sqrt(su / cnt)
+  end
+
   def aand
     if count == 0
       true

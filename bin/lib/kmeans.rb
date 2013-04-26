@@ -2,8 +2,13 @@ $LOAD_PATH << File.dirname(__FILE__)
 
 require 'maputil'
 
+def normal(x, avg, std)
+  exp = -(((x - avg) / std) ** 2) / 2
+  ((Math.exp(exp) / (std * Math.sqrt(2 * Math::PI))))
+end
+
 def f_test(clusters, means, cnt, avg)
-  ev = 0
+  ev   = 0
   cnt2 = clusters.count { |i| !i.empty? }
   (0...means.count).each { |i|
     unless clusters[i].empty?
@@ -25,7 +30,7 @@ def f_test(clusters, means, cnt, avg)
 end
 
 def f_test2(clusters, means, cnt)
-  uv = 0
+  uv   = 0
   cnt2 = clusters.count { |i| !i.empty? }
   (0...means.count).each { |i|
     unless clusters[i].empty?
@@ -41,6 +46,28 @@ def f_test2(clusters, means, cnt)
 end
 
 module Enumerable
+  def outliers(sensitivity = 0.5)
+    ks = nmeans
+    cs = get_clusters(ks)
+
+    def normal(x, avg, std)
+      exp = -(((x - avg) / std) ** 2) / 2
+      ((Math.exp(exp) / (std * Math.sqrt(2 * Math::PI))))
+    end
+
+    outliers = []
+
+    ks.each_with_index { |avg, i|
+      csi      = cs[i]
+      std      = csi.std_dev
+      cnt      = csi.count
+      outliers += csi.select { |c|
+        (normal(c, avg, std) * cnt) < sensitivity
+      }
+    }
+    outliers
+  end
+
   def nmeans(max_k = 10, threshold = 0.05)
     su  = sum
     cnt = count
@@ -80,13 +107,13 @@ module Enumerable
     while ks != kso
       kso      = ks
       clusters = get_clusters(kso)
-      ks = []
+      ks       = []
       clusters.each_with_index { |val, key|
         cnt = val.count
         if cnt <= 0
           ks[key] = kso[key]
         else
-          sum = val.sum
+          sum     = val.sum
           ks[key] = (sum / cnt)
         end
       }

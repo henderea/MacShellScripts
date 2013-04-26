@@ -1,0 +1,68 @@
+#!/usr/bin/env ruby
+
+$LOAD_PATH << File.dirname(__FILE__)
+
+require 'lib/maputil'
+require 'lib/kmeans'
+require 'optparse'
+
+options = {
+    file:         nil,
+    one_per_line: false,
+    delimiter: ', ',
+    sensitivity: 0.5,
+}
+
+delimiter_set = false
+
+def add_option(options, opts, short_name, long_name, opt_name)
+  opts.on(short_name, long_name) { options[opt_name] = true }
+end
+
+def add_option_with_param(options, opts, short_name, long_name, opt_name)
+  opts.on(short_name, long_name) { |name| options[opt_name] = name }
+end
+
+def add_option_with_param_and_type(options, opts, short_name, long_name, opt_name, type)
+  opts.on(short_name, long_name, type) { |name| options[opt_name] = name }
+end
+
+option_parser = OptionParser.new { |opts|
+  add_option_with_param(options, opts, '-f', '--file FILE', :file)
+  opts.on('-1', '--one-per-line') do
+    options[:one_per_line] = true
+    unless delimiter_set
+      options[:delimiter] = nil
+    end
+  end
+  opts.on('-d', '--delimiter [DELIMITER]') do |delim|
+    options[:delimiter] = delim
+    delimiter_set = true
+  end
+  add_option_with_param_and_type(options, opts, '-s', '--sensitivity LEVEL', :sensitivity, Float)
+}
+
+option_parser.parse!
+
+data = []
+
+if options[:file].nil?
+  val = gets.chomp
+  i = 0
+  until val.nil? || val.length <= 0 || $stdin.eof?
+    data[i] = val.to_f
+    val = gets.chomp
+    i   += 1
+  end
+else
+  if File.exist?(options[:file])
+    data = IO.readlines(options[:file]).map { |v| v.chomp.to_f }
+  else
+    puts "File '#{options[:file]}' does not exist!"
+    exit 1
+  end
+end
+
+outliers = data.outliers(options[:sensitivity])
+
+puts outliers.join("#{options[:delimiter]}#{options[:one_per_line] ? "\n" : ''}")
