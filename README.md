@@ -69,6 +69,7 @@ Here are the descriptions for the scripts:
       * `-f NAME` or `--log-file NAME` to set the log file name to `NAME` (default is `build.log`)
       * `-d` or `--advanced-average` to use k-means (with minimum optimal k) to find a list of averages and use the closest one for the progress bar and displayed average (default is to use overall average)
       * `-o` or `--command-override` to override the maven command (disables average tracking options and skip test option) (default is `clean install` (with optional `-D skipTests`) and not disabling any options)
+      * `-p` or `--package` to run `mvn clean package` (with optional `-D skipTests`) (default is `mvn clean install` (with optional `-D skipTests`) (supports average tracking)
    * **displays:** a Growl notification indicating success or failure
    * **requires:** Ruby, maven, Growl, `growlnotify`, `lib/format.rb`, `lib/maputil.rb`, and `lib/kmeans.rb`
    * **note:** `growlnotify` is available in Homebrew and from the Growl website
