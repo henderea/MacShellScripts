@@ -45,13 +45,13 @@ option_parser.parse!
 data = []
 
 if options[:file].nil?
-  val = gets.chomp
+  val = nil
   i = 0
-  until val.nil? || val.length <= 0 || $stdin.eof?
-    data[i] = val.to_f
+  begin
     val = gets.chomp
+    data[i] = val.to_f
     i += 1
-  end
+  end until val.nil? || val.length <= 0 || $stdin.eof?
 else
   if File.exist?(options[:file])
     data = IO.readlines(options[:file]).map { |v| v.chomp.to_f }
