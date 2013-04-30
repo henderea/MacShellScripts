@@ -46,8 +46,12 @@ def f_test2(clusters, means, cnt)
 end
 
 module Enumerable
-  def outliers(sensitivity = 0.5)
-    ks = nmeans
+  def outliers(sensitivity = 0.5, k = nil)
+    if k.nil?
+      ks = nmeans
+    else
+      ks = kmeans(k)
+    end
     cs = get_clusters(ks)
 
     def normal(x, avg, std)

@@ -10,8 +10,6 @@ options = {
     file:         nil,
     one_per_line: false,
     delimiter:    ', ',
-    sensitivity:  0.5,
-    k_value:      nil,
 }
 
 delimiter_set = false
@@ -24,8 +22,8 @@ def add_option_with_param(options, opts, short_name, long_name, opt_name)
   opts.on(short_name, long_name) { |name| options[opt_name] = name }
 end
 
-def add_option_with_param_and_type(options, opts, short_name, long_name, opt_name, type)
-  opts.on(short_name, long_name, type) { |name| options[opt_name] = name }
+def add_integer_option_with_param(options, opts, short_name, long_name, opt_name)
+  opts.on(short_name, long_name, Integer) { |name| options[opt_name] = name }
 end
 
 option_parser = OptionParser.new { |opts|
@@ -40,11 +38,11 @@ option_parser = OptionParser.new { |opts|
     options[:delimiter] = delim
     delimiter_set       = true
   end
-  add_option_with_param_and_type(options, opts, '-s', '--sensitivity LEVEL', :sensitivity, Float)
-  add_option_with_param_and_type(options, opts, '-k', '--k-value KVALUE', :k_value, Integer)
 }
 
 option_parser.parse!
+
+k = ARGV.shift.to_i
 
 data = []
 
@@ -78,6 +76,6 @@ else
   end
 end
 
-outliers = data.outliers(options[:sensitivity], options[:k_value]).sort
+ks = data.kmeans(k)
 
-puts outliers.join("#{options[:delimiter]}#{options[:one_per_line] ? "\n" : ''}")
+puts ks.join("#{options[:delimiter]}#{options[:one_per_line] ? "\n" : ''}")

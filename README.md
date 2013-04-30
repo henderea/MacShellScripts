@@ -56,6 +56,16 @@ Here are the descriptions for the scripts:
    * **displays:** prints the file size percent remaining
    * **note:** `jscomp` is probably better
    * **requires:** `yuicompressor-2.4.7.jar` and `fsizecomp`
+* `kmeans`: calculate the kmeans on a set of data
+   * **required parameters:**
+      * k (the number of means)
+   * **optional parameters:**
+      * `-f FILE` or `--file FILE` to read data from the file `FILE`, assuming 1 entry per line (default is to read from `stdin` (EOF or blank line signals end of input))
+      * `-1` or `--one-per-line` to output one per line; disables default delimeter
+      * `-d DELIM` or `--delimiter DELIM` to use `DELIM` as the delimiter; overrides delimiter disable of `-1`; leaving `DELIM` blank will disable the delimiter (default delimeter is ', ' (comma followed by a space))
+   * **displays:** the k-means for the clusters, using the provided k
+   * **requires:** Ruby, `lib/maputil.rb`, and `lib/kmeans.rb`
+   * **note:** you may need to change the path on the first line of the file to point to your installation of Ruby, but hopefully it will work properly as-is
 * `mvn2`: a Ruby script that runs a maven build, including (or not including) tests, and only outputs the lines that come after a compile failure, build success, or test result start line
    * **optional parameters:**
       * `-t` or `--timer` to display a timer while the build is in progress (default is display nothing)
@@ -93,13 +103,13 @@ Here are the descriptions for the scripts:
    * **displays:** the k-means for the clusters, using the minimum optimal k
    * **requires:** Ruby, `lib/maputil.rb`, and `lib/kmeans.rb`
    * **note:** you may need to change the path on the first line of the file to point to your installation of Ruby, but hopefully it will work properly as-is
-   * **requires:** Ruby, `lib/maputil.rb`, and `lib/kmeans.rb`
 * `outliers`: calculate the outliers of a set of data (based on clusters from n-means)
    * **optional parameters:**
       * `-f FILE` or `--file FILE` to read data from the file `FILE`, assuming 1 entry per line (default is to read from `stdin` (EOF or blank line signals end of input))
       * `-1` or `--one-per-line` to output one per line; disables default delimeter
       * `-d DELIM` or `--delimiter DELIM` to use `DELIM` as the delimiter; overrides delimiter disable of `-1`; leaving `DELIM` blank will disable the delimiter (default delimeter is ', ' (comma followed by a space))
       * `-s LEVEL` or `--sensitivity LEVEL` to set the sensitivity level to `LEVEL` (float between 0 and 1) (default is 0.5)
+      * `-k KVALUE` or `--k-value KVALUE` to fix k at `KVALUE` instead of using the minimum optimal k
    * **displays:** the k-means for the clusters, using the minimum optimal k
    * **requires:** Ruby, `lib/maputil.rb`, and `lib/kmeans.rb`
    * **note:** you may need to change the path on the first line of the file to point to your installation of Ruby, but hopefully it will work properly as-is
