@@ -66,12 +66,12 @@ Here are the descriptions for the scripts:
    * **displays:** the k-means for the clusters, using the provided k
    * **requires:** Ruby, `lib/maputil.rb`, and `lib/kmeans.rb`
    * **note:** you may need to change the path on the first line of the file to point to your installation of Ruby, but hopefully it will work properly as-is
-* `mvn2`: a Ruby script that runs a maven build, including (or not including) tests, and only outputs the lines that come after a compile failure, build success, or test result start line
+* `mvn2`: a Ruby script that runs a maven build, including (or not including) tests, and only outputs the lines that come after a compile failure, build success, test result, or reactor summary start line
    * **optional parameters:**
       * `-t` or `--timer` to display a timer while the build is in progress (default is display nothing)
       * `-s` or `--skip-tests` to skip tests (default is running tests)
       * `-n` or `--no-sticky` to make the growl notification non-sticky (default is sticky)
-      * `-a` or `--display-all` to display all output (default is to only display the output after a compile failure, build success, or test result start line)
+      * `-a` or `--display-all` to display all output (default is to only display the output after a compile failure, build success, test result, or reactor summary start line)
       * `-k` or `--track-average` to update the average (stored in `avg.txt`) and also display a progress bar while the build is in progress (default is not to do track average or display progress bar)
       * `-u` or `--track-full-average` to update the average list (stored in `avg-skip.txt` or `avg-test.txt`) and also display a progress bar while the build is in progress (default is to not do track average or display progress bar) (including this option will cause the progress bar to use the average calculated from the average list if available, but if `-k` or `--track-average` is specified, `avg.txt` will still be updated)
       * `-c` or `--colored` to display some colors in the timer/progress message
@@ -80,6 +80,7 @@ Here are the descriptions for the scripts:
       * `-d` or `--advanced-average` to use k-means (with minimum optimal k) to find a list of averages and use the closest one for the progress bar and displayed average (default is to use overall average)
       * `-o` or `--command-override` to override the maven command (disables average tracking options and skip test option) (default is `clean install` (with optional `-D skipTests`) and not disabling any options)
       * `-p` or `--package` to run `mvn clean package` (with optional `-D skipTests`) (default is `mvn clean install` (with optional `-D skipTests`) (supports average tracking)
+      * `-h` or `--hide-between` to hide the output between the end of test results (the line starting with "Tests run:") and the next trigger line
    * **displays:** a Growl notification indicating success or failure
    * **requires:** Ruby, maven, Growl, `growlnotify`, `lib/format.rb`, `lib/maputil.rb`, and `lib/kmeans.rb`
    * **note:** `growlnotify` is available in Homebrew and from the Growl website

@@ -22,6 +22,7 @@ options = {
     advanced_average:   false,
     command_override:   nil,
     package:            false,
+    hide_between:       false,
 }
 
 def add_option(options, opts, short_name, long_name, opt_name)
@@ -45,6 +46,7 @@ option_parser = OptionParser.new { |opts|
   add_option(options, opts, '-d', '--advanced-average', :advanced_average)
   add_option_with_param(options, opts, '-o', '--command-override CMD', :command_override)
   add_option(options, opts, '-p', '--package', :package)
+  add_option(options, opts, '-h', '--hide-between', :hide_between)
 }
 
 option_parser.parse!
@@ -189,7 +191,10 @@ def output_lines(output, options)
   found = false
 
   lines.each { |line|
-    if found
+    if options[:hide_between] && found && line.start_with?('Tests run:')
+      puts "#{line}\n\n"
+      found = false
+    elsif found
       puts line
     elsif line.start_with?('[ERROR] COMPILATION ERROR :') || line.start_with?('Results :')
       puts line
