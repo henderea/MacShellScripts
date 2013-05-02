@@ -201,7 +201,7 @@ def output_lines(output, options)
     elsif line.start_with?('[ERROR] COMPILATION ERROR :') || line.start_with?('Results :')
       puts line
       found = true
-    elsif line.start_with?('[INFO] BUILD SUCCESS') || line.start_with?('[INFO] Reactor Summary:')
+    elsif line.start_with?('[INFO] BUILD SUCCESS') || line.start_with?('[INFO] Reactor Summary:') || line.start_with?('[INFO] BUILD FAILURE')
       puts '[INFO] ------------------------------------------------------------------------'
       puts line
       found = true
