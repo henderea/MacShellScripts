@@ -5,6 +5,10 @@ This repository is a collection of the shell scripts I have written for my Mac.
 
 ---
 
+**NOTE:** if you are accessing this repository on GitHub, I have moved it to Bitbucket.  You can find it at https://bitbucket.org/henderea/macshellscripts.
+
+---
+
 Here are the descriptions for the scripts:
 
 * `chmodrd`: recursively change the permissions to the given parameter on all directories within and including the one given
