@@ -26,6 +26,7 @@
 .Op Fl p | -package
 .Op Fl h | -hide-between
 .Op Fl w | -show-average
+.Op Fl b | -block-update
 .Sh DESCRIPTION          \" Section Header - required - don't modify
 .Nm
 is a Ruby script that runs a maven build, including (or not including) tests, and only outputs the lines that come after a compile failure, build success, or test result start line
@@ -66,5 +67,7 @@ run "mvn clean package" (with optional "-D skipTests") (default is "mvn clean in
 hide the output between the end of test results (the line starting with "Tests run:") and the next trigger line
 .It Fl w | -show-average
 show the average(s) before and after the build (average tracking must be enabled) (default is to not show averages)
+.It Fl b | -block-update
+block the average feature from updating the file(s)
 .El                      \" Ends the list
 .Pp

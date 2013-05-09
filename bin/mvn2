@@ -24,6 +24,7 @@ options = {
     package:            false,
     hide_between:       false,
     show_average:       false,
+    block_update:       false,
 }
 
 def add_option(options, opts, short_name, long_name, opt_name)
@@ -49,6 +50,7 @@ option_parser = OptionParser.new { |opts|
   add_option(options, opts, '-p', '--package', :package)
   add_option(options, opts, '-h', '--hide-between', :hide_between)
   add_option(options, opts, '-w', '--show-average', :show_average)
+  add_option(options, opts, '-b', '--block-update', :block_update)
 }
 
 option_parser.parse!
@@ -104,7 +106,8 @@ def read_advanced_avg(options, avg)
 end
 
 def update_full_avg(average, options, result, time1)
-  if options[:command_override].nil? && options[:track_full_average] && (result || !options[:skip_tests])
+  unless options[:block_update]
+    options[:command_override].nil? && options[:track_full_average] && (result || !options[:skip_tests])
     time2 = Time.now
     diff  = time2 - time1
 
@@ -148,13 +151,15 @@ def calc_new_avg(averages, counts, diff, ind)
 end
 
 def update_avg(average, averages, counts, options, result, time1)
-  if options[:command_override].nil? && options[:track_average] && (result || !options[:skip_tests])
-    time2 = Time.now
-    diff  = time2 - time1
+  unless options[:block_update]
+    if options[:command_override].nil? && options[:track_average] && (result || !options[:skip_tests])
+      time2 = Time.now
+      diff  = time2 - time1
 
-    if result || diff >= average / 2.0
-      options[:skip_tests] ? calc_new_avg(averages, counts, diff, 0) : calc_new_avg(averages, counts, diff, 1)
-      IO.write('avg.txt', "#{averages[0]};#{counts[0]}\n#{averages[1]};#{counts[1]}\n#{averages[2]};#{counts[2]}\n#{averages[3]};#{counts[3]}")
+      if result || diff >= average / 2.0
+        options[:skip_tests] ? calc_new_avg(averages, counts, diff, 0) : calc_new_avg(averages, counts, diff, 1)
+        IO.write('avg.txt', "#{averages[0]};#{counts[0]}\n#{averages[1]};#{counts[1]}\n#{averages[2]};#{counts[2]}\n#{averages[3]};#{counts[3]}")
+      end
     end
   end
 end
