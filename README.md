@@ -21,6 +21,10 @@ Here are the descriptions for the scripts:
         * the file permission bits (same as first parameter to regular `chmod`)
         * the folder name
     * **action:** recursively change the permissions to the given parameter on all files within the directory given
+* `colorconfig`: create/edit a color configuration file for `mvn2` and `mvr`
+    * **action:** goes through a series of command line option prompts (where you enter the number of the option you want), looping until you exit
+    * **requires:** Ruby and `lib/maputil.rb`
+    * **note:** you may need to change the path on the first line of the file to point to your installation of Ruby, but hopefully it will work properly as-is
 * `cssmin`: use the YUI compressor to minify a CSS file
     * **parameters:**
         * the filename (single file)
@@ -87,6 +91,7 @@ Here are the descriptions for the scripts:
         * `-h` or `--hide-between` to hide the output between the end of test results (the line starting with "Tests run:") and the next trigger line
         * `-w` or `--show-average` to show the average(s) before and after the build (average tracking must be enabled) (default is to not show averages)
         * `-b` or `--block-update` to block the average feature from updating the file(s)
+        * `-v` or `--override-colors` to override the colors with the ones configured by the `colorconfig` script
     * **displays:** a Growl notification indicating success or failure
     * **requires:** Ruby, maven, Growl, `growlnotify`, `lib/format.rb`, `lib/maputil.rb`, and `lib/kmeans.rb`
     * **note:** `growlnotify` is available in Homebrew and from the Growl website
@@ -97,6 +102,7 @@ Here are the descriptions for the scripts:
         * filenames
     * **optional parameters:**
         * `-e` or `--exclude-extension` to exclude the extension of the file from the pattern matching/replacement
+        * `-o` or `--override-colors` to override the colors with the ones configured by the `colorconfig` script
     * **displays:** prints a color-coded list of file names and their replacement names; also asks for confirmation
         * **Color Coding:** grey background for no change, red background for conflict
     * **action:** if you type `y` or `yes` (case insensitive), it will rename the files; anything else will cause it to cancel the operation

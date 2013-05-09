@@ -27,6 +27,7 @@
 .Op Fl h | -hide-between
 .Op Fl w | -show-average
 .Op Fl b | -block-update
+.Op Fl v | -override-colors
 .Sh DESCRIPTION          \" Section Header - required - don't modify
 .Nm
 is a Ruby script that runs a maven build, including (or not including) tests, and only outputs the lines that come after a compile failure, build success, or test result start line
@@ -69,5 +70,7 @@ hide the output between the end of test results (the line starting with "Tests r
 show the average(s) before and after the build (average tracking must be enabled) (default is to not show averages)
 .It Fl b | -block-update
 block the average feature from updating the file(s)
+.It Fl v | -override-colors
+override the colors with the ones configured by the colorconfig script
 .El                      \" Ends the list
 .Pp

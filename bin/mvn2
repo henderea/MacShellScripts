@@ -2,10 +2,11 @@
 
 $LOAD_PATH << File.dirname(__FILE__)
 
+require 'optparse'
+require 'yaml'
 require 'lib/maputil'
 require 'lib/format'
 require 'lib/kmeans'
-require 'optparse'
 
 include Format
 
@@ -25,6 +26,7 @@ options = {
     hide_between:       false,
     show_average:       false,
     block_update:       false,
+    override_colors:    false,
 }
 
 def add_option(options, opts, short_name, long_name, opt_name)
@@ -51,6 +53,7 @@ option_parser = OptionParser.new { |opts|
   add_option(options, opts, '-h', '--hide-between', :hide_between)
   add_option(options, opts, '-w', '--show-average', :show_average)
   add_option(options, opts, '-b', '--block-update', :block_update)
+  add_option(options, opts, '-v', '--override-colors', :override_colors)
 }
 
 option_parser.parse!
@@ -59,6 +62,27 @@ Signal.trap('SIGINT') {
   puts "\nBuild Canceled\n\n"
   exit 1
 }
+
+color_opts = {
+    time:    {
+        fg: :green,
+        bg: :none,
+    },
+    percent: {
+        fg: :purple,
+        bg: :none,
+    },
+    average: {
+        fg: :cyan,
+        bg: :none,
+    },
+}
+
+config_file = File.expand_path('~/mvn2-colors.yaml')
+
+if options[:override_colors] && File.exist?(config_file)
+  color_opts = YAML::load_file(config_file)
+end
 
 st   = options[:skip_tests] ? ' -D skipTests' : ''
 cmd2 = options[:package] ? 'package' : 'install'
@@ -164,26 +188,26 @@ def update_avg(average, averages, counts, options, result, time1)
   end
 end
 
-def colorize_if_should(text, fgcolor, colored)
-  colored ? colorize(text, fgcolor) : text
+def colorize_if_should(text, colors, colored)
+  colored ? colorize(text, colors[:fg], colors[:bg]) : text
 end
 
-def get_avg_message(amin, asec, avg, colored, diff, m, s)
+def get_avg_message(color_opts, amin, asec, avg, colored, diff, m, s)
   progress = ((diff.to_f / avg.to_f) * 100.0)
   bars     = [progress.floor, 100].min
-  "[#{'=' * bars}>#{' ' * (100 - bars)}] #{colorize_if_should("#{m}:#{s}", :green, colored)} (#{colorize_if_should("~#{'%.3f' % progress}%", :purple, colored)}) (average: #{colorize_if_should("#{amin}:#{asec}", :cyan, colored)})"
+  "[#{'=' * bars}>#{' ' * (100 - bars)}] #{colorize_if_should("#{m}:#{s}", color_opts[:time], colored)} (#{colorize_if_should("~#{'%.3f' % progress}%", color_opts[:percent], colored)}) (average: #{colorize_if_should("#{amin}:#{asec}", color_opts[:average], colored)})"
 end
 
 def get_closest(averages, time)
   averages.min { |a, b| (a - time).abs <=> (b - time).abs }
 end
 
-def get_timer_message(avgs, colored, start_time, time)
+def get_timer_message(color_opts, avgs, colored, start_time, time)
   diff       = time - start_time
   avg        = get_closest(avgs, diff)
   amin, asec = get_time_parts(avg)
   m, s       = get_time_parts(diff)
-  (avg == 0) ? colorize_if_should("#{m}:#{s}", :green, colored) : get_avg_message(amin, asec, avg, colored, diff, m, s)
+  (avg == 0) ? colorize_if_should("#{m}:#{s}", color_opts[:time], colored) : get_avg_message(color_opts, amin, asec, avg, colored, diff, m, s)
 end
 
 def get_time_parts(time)
@@ -215,10 +239,10 @@ def output_lines(output, options)
   lines.each { |line| puts line } unless found
 end
 
-def start_timer_thread(averages, options, time1)
-  Thread.new(time1, averages, options[:colored]) { |start_time, avgs, colored|
+def start_timer_thread(color_opts, averages, options, time1)
+  Thread.new(time1, averages, options[:colored], color_opts) { |start_time, avgs, colored, color_opts|
     while true
-      print "\r#{get_timer_message(avgs, colored, start_time, Time.now)}"
+      print "\r#{get_timer_message(color_opts, avgs, colored, start_time, Time.now)}"
       sleep(0.05)
     end
   }
@@ -234,13 +258,13 @@ def show_averages(averages2)
   end
 end
 
-def run_and_filter_output(options, cmd)
+def run_and_filter_output(color_opts, options, cmd)
   average, averages, counts = read_avg(options)
   average                   = read_full_avg(options, average)
   averages2                 = read_advanced_avg(options, average)
   show_averages(averages2) if options[:show_average]
   time1  = Time.now
-  thread = options[:do_timer] ? start_timer_thread(averages2, options, time1) : nil
+  thread = options[:do_timer] ? start_timer_thread(color_opts, averages2, options, time1) : nil
 
   output = `#{cmd}`
   result = $?.success?
@@ -264,6 +288,6 @@ def run_and_filter_output(options, cmd)
   result
 end
 
-result = options[:display_all] ? system(cmd) : run_and_filter_output(options, cmd)
+result = options[:display_all] ? system(cmd) : run_and_filter_output(color_opts, options, cmd)
 
 `growlnotify -n Terminal -a Terminal#{(options[:no_sticky] ? '' : ' -s')} -m "#{(options[:command_override].nil? ? (options[:skip_tests] ? 'Build' : 'Tests') : 'Operation')} #{(result ? 'Successful' : 'Failed')}" -t "#{cmd[0...-5]}"`

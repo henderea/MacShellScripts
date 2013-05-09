@@ -13,6 +13,7 @@
 .Sh SYNOPSIS             \" Section Header - required - don't modify
 .Nm
 .Op Fl e | -exclude-extension
+.Op Fl v | -override-colors
 .Ao Ar find Ac
 .Ao Ar replace Ac
 file ...                 \" Arguments
@@ -31,6 +32,8 @@ Parameters:
 .Bl -tag -width "-e | --exclude-extension " -compact  \" Begins a tagged list 
 .It Fl e | -exclude-extension
 exclude the extension of the file from the pattern matching/replacement
+.It Fl v | -override-colors
+override the colors with the ones configured by the colorconfig script
 .It Ao Ar find Ac
 The regular expression for the renaming
 .It Ao Ar replace Ac
@@ -39,8 +42,3 @@ The text to replace what the regular expression matches (use \\# to insert captu
 The list of files and/or folders to rename
 .El                      \" Ends the list
 .Pp
-.Sh FILES                \" File used or created by the topic of the man page
-.Bl -tag -width "~/Documents/Developer/scripts/bin    " -compact
-.It Pa ~/Documents/Developer/scripts/bin
-mvr    The Ruby script
-.El                      \" Ends the list

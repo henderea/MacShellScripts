@@ -2,13 +2,15 @@
 
 $LOAD_PATH << File.dirname(__FILE__)
 
-require 'lib/format'
 require 'optparse'
+require 'yaml'
+require 'lib/format'
 
 include Format
 
 options = {
-    exclude_extension: false
+    exclude_extension: false,
+    override_colors: false,
 }
 
 def add_option(options, opts, short_name, long_name, opt_name)
@@ -21,9 +23,31 @@ end
 
 option_parser = OptionParser.new { |opts|
   add_option(options, opts, '-e', '--exclude-extension', :exclude_extension)
+  add_option(options, opts, '-v', '--override-colors', :override_colors)
 }
 
 option_parser.parse!
+
+color_opts = {
+    normal:   {
+        fg: :none,
+        bg: :none,
+    },
+    same:     {
+        fg: :black,
+        bg: :white,
+    },
+    conflict: {
+        fg: :white,
+        bg: :red,
+    },
+}
+
+config_file = File.expand_path('~/mvr-colors.yaml')
+
+if options[:override_colors] && File.exist?(config_file)
+  color_opts = YAML::load_file(config_file)
+end
 
 pattern = ARGV.shift
 if pattern == 'help' || pattern == '--help' || pattern == '-h'
@@ -56,7 +80,7 @@ duplicated  = Array.new
 ARGV.each do |filename|
   file_basename = File.basename(filename)
   directory     = filename[0, (filename.length - file_basename.length)]
-  file_ext             = File.extname(file_basename)
+  file_ext      = File.extname(file_basename)
   if options[:exclude_extension] && file_ext.length > 0
     file_basename2       = file_basename[0...-file_ext.length]
     replacement_basename = file_basename2.gsub(regex, replacement)
@@ -106,11 +130,14 @@ mappings.each do |from, to|
   from2 = from.center(len1)
   to2   = to.center(len2)
   if from == to
-    from2 = colorize(from2, :black, :white)
-    to2   = colorize(to2, :black, :white)
+    from2 = colorize(from2, color_opts[:same][:fg], color_opts[:same][:bg])
+    to2 = colorize(to2, color_opts[:same][:fg], color_opts[:same][:bg])
   elsif duplicated.include?(to)
-    from2 = colorize(from2, :white, :red)
-    to2   = colorize(to2, :white, :red)
+    from2 = colorize(from2, color_opts[:conflict][:fg], color_opts[:conflict][:bg])
+    to2 = colorize(to2, color_opts[:conflict][:fg], color_opts[:conflict][:bg])
+  else
+    from2 = colorize(from2, color_opts[:normal][:fg], color_opts[:normal][:bg])
+    to2 = colorize(to2, color_opts[:normal][:fg], color_opts[:normal][:bg])
   end
   puts "| #{from2} | #{to2} |"
 end

@@ -12,6 +12,7 @@ module Format
       :purple => '35',
       :cyan   => '36',
       :white  => '37',
+      :none   => nil,
   }
   BG_COLOR_TO_CODE = {
       :black  => '40',
@@ -22,6 +23,7 @@ module Format
       :purple => '45',
       :cyan   => '46',
       :white  => '47',
+      :none   => nil,
   }
 
   def format(text, format_code)

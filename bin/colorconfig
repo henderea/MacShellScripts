@@ -1,0 +1,118 @@
+#!/usr/bin/env ruby
+
+$LOAD_PATH << File.dirname(__FILE__)
+
+require 'yaml'
+require 'readline'
+require 'lib/maputil'
+
+config_files = {
+    mvn2: '~/mvn2-colors.yaml',
+    mvr:  '~/mvr-colors.yaml',
+}
+
+default_options = {
+    mvn2: {
+        time:    {
+            fg: :green,
+            bg: :none,
+        },
+        percent: {
+            fg: :purple,
+            bg: :none,
+        },
+        average: {
+            fg: :cyan,
+            bg: :none,
+        },
+    },
+    mvr:  {
+        normal:   {
+            fg: :none,
+            bg: :none,
+        },
+        same:     {
+            fg: :black,
+            bg: :white,
+        },
+        conflict: {
+            fg: :white,
+            bg: :red,
+        },
+    },
+}
+
+colors = [:black, :red, :green, :yellow, :blue, :purple, :cyan, :white, :none]
+
+def setup_options(options)
+  mapped = []
+  options.each_with_index { |v, k|
+    mapped << "#{k+1}) #{v.to_s}"
+  }
+  mapped.join("\n")
+end
+
+def ask(question, options, &block)
+  val = '-1'
+  while true
+    print "#{question}\n\n#{setup_options(options)}\n\n"
+    val = Readline.readline("Please enter your choice (1 - #{options.count}): ", true)
+    if !(val =~ /^\d+$/).nil? && (1..options.count).include?(val.to_i)
+      break
+    end
+    print "\n\nYou must enter an integer between 1 and #{options.count}. Please try again.\n\n"
+  end
+  block.call(options[val.to_i - 1])
+end
+
+def hash_to_options(hash, extra = [])
+  hash.keys + extra
+end
+
+while true
+
+  ask('Which script do you want to configure colors for?', [:mvn2, :mvr, :Exit]) { |script|
+    if script == :Exit
+      exit(0)
+    end
+
+    config_file = File.expand_path(config_files[script])
+
+    options = Marshal.load(Marshal.dump(default_options[script]))
+
+    if File.exist?(config_file)
+      options = YAML::load_file(config_file)
+    end
+
+    brk = false
+    until brk
+      ask('Which config option do you want?', hash_to_options(options, [:Save, :'Up a level', :Exit])) { |opt|
+        if opt == :Exit
+          exit(0)
+        elsif opt == :'Up a level'
+          brk = true
+        elsif opt == :Save
+          IO.write(config_file, options.to_yaml)
+          puts "\nSaved\n\n"
+        else
+          brk2 = false
+          until brk2
+            ask("Configuring: #{opt.to_s}\nWhich color do you want to set?", hash_to_options(options[opt], [:'Up a level', :Exit])) { |which|
+              if which == :Exit
+                exit(0)
+              elsif which == :'Up a level'
+                brk2 = true
+              else
+                ask("Configuring: #{opt.to_s} -> #{which.to_s} (currently: #{options[opt][which].to_s}) (default: #{default_options[script][opt][which].to_s})\nWhich color do you want?", colors + [:Default, :Cancel]) { |color|
+                  unless color == :Cancel
+                    options[opt][which] = (color == :Default) ? default_options[script][opt][which] : color
+                  end
+                }
+              end
+            }
+          end
+        end
+      }
+    end
+  }
+end
