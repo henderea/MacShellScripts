@@ -23,7 +23,7 @@ Here are the descriptions for the scripts:
     * **action:** recursively change the permissions to the given parameter on all files within the directory given
 * `colorconfig`: create/edit a color configuration file for `mvn2` and `mvr`
     * **action:** goes through a series of command line option prompts (where you enter the number of the option you want), looping until you exit
-    * **requires:** Ruby and `lib/maputil.rb`
+    * **requires:** Ruby, `lib/maputil.rb`, and `lib/ask.rb`
     * **note:** you may need to change the path on the first line of the file to point to your installation of Ruby, but hopefully it will work properly as-is
 * `cssmin`: use the YUI compressor to minify a CSS file
     * **parameters:**

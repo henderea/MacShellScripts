@@ -5,6 +5,7 @@ $LOAD_PATH << File.dirname(__FILE__)
 require 'yaml'
 require 'readline'
 require 'lib/maputil'
+require 'lib/ask'
 
 config_files = {
     mvn2: '~/mvn2-colors.yaml',
@@ -44,34 +45,9 @@ default_options = {
 
 colors = [:black, :red, :green, :yellow, :blue, :purple, :cyan, :white, :none]
 
-def setup_options(options)
-  mapped = []
-  options.each_with_index { |v, k|
-    mapped << "#{k+1}) #{v.to_s}"
-  }
-  mapped.join("\n")
-end
-
-def ask(question, options, &block)
-  val = '-1'
-  while true
-    print "#{question}\n\n#{setup_options(options)}\n\n"
-    val = Readline.readline("Please enter your choice (1 - #{options.count}): ", true)
-    if !(val =~ /^\d+$/).nil? && (1..options.count).include?(val.to_i)
-      break
-    end
-    print "\n\nYou must enter an integer between 1 and #{options.count}. Please try again.\n\n"
-  end
-  block.call(options[val.to_i - 1])
-end
-
-def hash_to_options(hash, extra = [])
-  hash.keys + extra
-end
-
 while true
 
-  ask('Which script do you want to configure colors for?', [:mvn2, :mvr, :Exit]) { |script|
+  Ask::ask('Which script do you want to configure colors for?', [:mvn2, :mvr, :Exit]) { |script|
     if script == :Exit
       exit(0)
     end
@@ -86,7 +62,7 @@ while true
 
     brk = false
     until brk
-      ask('Which config option do you want?', hash_to_options(options, [:Save, :'Up a level', :Exit])) { |opt|
+      Ask::ask('Which config option do you want?', Ask::hash_to_options(options, [:Save, :'Up a level', :Exit])) { |opt|
         if opt == :Exit
           exit(0)
         elsif opt == :'Up a level'
@@ -97,13 +73,13 @@ while true
         else
           brk2 = false
           until brk2
-            ask("Configuring: #{opt.to_s}\nWhich color do you want to set?", hash_to_options(options[opt], [:'Up a level', :Exit])) { |which|
+            Ask::ask("Configuring: #{opt.to_s}\nWhich color do you want to set?", Ask::hash_to_options(options[opt], [:'Up a level', :Exit])) { |which|
               if which == :Exit
                 exit(0)
               elsif which == :'Up a level'
                 brk2 = true
               else
-                ask("Configuring: #{opt.to_s} -> #{which.to_s} (currently: #{options[opt][which].to_s}) (default: #{default_options[script][opt][which].to_s})\nWhich color do you want?", colors + [:Default, :Cancel]) { |color|
+                Ask::ask("Configuring: #{opt.to_s} -> #{which.to_s} (currently: #{options[opt][which].to_s}) (default: #{default_options[script][opt][which].to_s})\nWhich color do you want?", colors + [:Default, :Cancel]) { |color|
                   unless color == :Cancel
                     options[opt][which] = (color == :Default) ? default_options[script][opt][which] : color
                   end
