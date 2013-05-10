@@ -7,6 +7,7 @@ require 'yaml'
 require 'lib/maputil'
 require 'lib/format'
 require 'lib/kmeans'
+require 'lib/option'
 
 include Format
 
@@ -29,31 +30,23 @@ options = {
     override_colors:    false,
 }
 
-def add_option(options, opts, short_name, long_name, opt_name)
-  opts.on(short_name, long_name) { options[opt_name] = true }
-end
-
-def add_option_with_param(options, opts, short_name, long_name, opt_name)
-  opts.on(short_name, long_name) { |name| options[opt_name] = name }
-end
-
 option_parser = OptionParser.new { |opts|
-  add_option(options, opts, '-t', '--timer', :do_timer)
-  add_option(options, opts, '-s', '--skip-tests', :skip_tests)
-  add_option(options, opts, '-n', '--no-sticky', :no_sticky)
-  add_option(options, opts, '-a', '--display-all', :display_all)
-  add_option(options, opts, '-k', '--track-average', :track_average)
-  add_option(options, opts, '-u', '--track-full-average', :track_full_average)
-  add_option(options, opts, '-c', '--colored', :colored)
-  add_option(options, opts, '-l', '--write-log', :write_log)
-  add_option_with_param(options, opts, '-f', '--log-file NAME', :log_file)
-  add_option(options, opts, '-d', '--advanced-average', :advanced_average)
-  add_option_with_param(options, opts, '-o', '--command-override CMD', :command_override)
-  add_option(options, opts, '-p', '--package', :package)
-  add_option(options, opts, '-h', '--hide-between', :hide_between)
-  add_option(options, opts, '-w', '--show-average', :show_average)
-  add_option(options, opts, '-b', '--block-update', :block_update)
-  add_option(options, opts, '-v', '--override-colors', :override_colors)
+  Option::add_option(options, opts, '-t', '--timer', :do_timer)
+  Option::add_option(options, opts, '-s', '--skip-tests', :skip_tests)
+  Option::add_option(options, opts, '-n', '--no-sticky', :no_sticky)
+  Option::add_option(options, opts, '-a', '--display-all', :display_all)
+  Option::add_option(options, opts, '-k', '--track-average', :track_average)
+  Option::add_option(options, opts, '-u', '--track-full-average', :track_full_average)
+  Option::add_option(options, opts, '-c', '--colored', :colored)
+  Option::add_option(options, opts, '-l', '--write-log', :write_log)
+  Option::add_option_with_param(options, opts, '-f', '--log-file NAME', :log_file)
+  Option::add_option(options, opts, '-d', '--advanced-average', :advanced_average)
+  Option::add_option_with_param(options, opts, '-o', '--command-override CMD', :command_override)
+  Option::add_option(options, opts, '-p', '--package', :package)
+  Option::add_option(options, opts, '-h', '--hide-between', :hide_between)
+  Option::add_option(options, opts, '-w', '--show-average', :show_average)
+  Option::add_option(options, opts, '-b', '--block-update', :block_update)
+  Option::add_option(options, opts, '-v', '--override-colors', :override_colors)
 }
 
 option_parser.parse!

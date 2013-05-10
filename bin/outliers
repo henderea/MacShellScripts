@@ -2,9 +2,10 @@
 
 $LOAD_PATH << File.dirname(__FILE__)
 
+require 'optparse'
 require 'lib/maputil'
 require 'lib/kmeans'
-require 'optparse'
+require 'lib/option'
 
 options = {
     file:         nil,
@@ -16,20 +17,8 @@ options = {
 
 delimiter_set = false
 
-def add_option(options, opts, short_name, long_name, opt_name)
-  opts.on(short_name, long_name) { options[opt_name] = true }
-end
-
-def add_option_with_param(options, opts, short_name, long_name, opt_name)
-  opts.on(short_name, long_name) { |name| options[opt_name] = name }
-end
-
-def add_option_with_param_and_type(options, opts, short_name, long_name, opt_name, type)
-  opts.on(short_name, long_name, type) { |name| options[opt_name] = name }
-end
-
 option_parser = OptionParser.new { |opts|
-  add_option_with_param(options, opts, '-f', '--file FILE', :file)
+  Option::add_option_with_param(options, opts, '-f', '--file FILE', :file)
   opts.on('-1', '--one-per-line') do
     options[:one_per_line] = true
     unless delimiter_set
@@ -40,8 +29,8 @@ option_parser = OptionParser.new { |opts|
     options[:delimiter] = delim
     delimiter_set       = true
   end
-  add_option_with_param_and_type(options, opts, '-s', '--sensitivity LEVEL', :sensitivity, Float)
-  add_option_with_param_and_type(options, opts, '-k', '--k-value KVALUE', :k_value, Integer)
+  Option::add_option_with_param_and_type(options, opts, '-s', '--sensitivity LEVEL', :sensitivity, Float)
+  Option::add_option_with_param_and_type(options, opts, '-k', '--k-value KVALUE', :k_value, Integer)
 }
 
 option_parser.parse!

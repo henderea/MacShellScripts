@@ -5,6 +5,7 @@ $LOAD_PATH << File.dirname(__FILE__)
 require 'optparse'
 require 'yaml'
 require 'lib/format'
+require 'lib/option'
 
 include Format
 
@@ -13,17 +14,9 @@ options = {
     override_colors: false,
 }
 
-def add_option(options, opts, short_name, long_name, opt_name)
-  opts.on(short_name, long_name) { options[opt_name] = true }
-end
-
-def add_option_with_param(options, opts, short_name, long_name, opt_name)
-  opts.on(short_name, long_name) { |name| options[opt_name] = name }
-end
-
 option_parser = OptionParser.new { |opts|
-  add_option(options, opts, '-e', '--exclude-extension', :exclude_extension)
-  add_option(options, opts, '-v', '--override-colors', :override_colors)
+  Option::add_option(options, opts, '-e', '--exclude-extension', :exclude_extension)
+  Option::add_option(options, opts, '-v', '--override-colors', :override_colors)
 }
 
 option_parser.parse!
