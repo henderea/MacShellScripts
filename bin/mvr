@@ -7,8 +7,6 @@ require 'yaml'
 require 'lib/format'
 require 'lib/option'
 
-include Format
-
 options = {
     exclude_extension: false,
     override_colors: false,
@@ -44,25 +42,25 @@ end
 
 pattern = ARGV.shift
 if pattern == 'help' || pattern == '--help' || pattern == '-h'
-  puts bold('NAME')
-  puts "    #{bold('mvr', :purple)} -- Renames a group of files and/or folders using a regular expression\n\n"
-  puts bold('SYNOPSIS')
-  puts "    #{bold('mvr', :purple)} <#{underline('find', :cyan)}> <#{underline('replace', :cyan)}> #{colorize('file ...', :cyan)}\n\n"
-  puts bold('DESCRIPTION')
-  puts "    #{bold('mvr', :purple)} is a Ruby script that allows you to rename a group of files and/or folders using a regular expression."
-  puts "    The #{underline('find', :cyan)} parameter uses normal regular expression syntax (there might be Ruby-specific things, but I doubt it)."
-  puts "    The #{underline('replace', :cyan)} parameter is plain text, using #{colorize('\\#', :green)} to insert capture group #{colorize('#', :green)} (so #{colorize('\\1', :green)} to insert the first capture group)."
+  puts Format::bold('NAME')
+  puts "    #{Format::bold('mvr', :purple)} -- Renames a group of files and/or folders using a regular expression\n\n"
+  puts Format::bold('SYNOPSIS')
+  puts "    #{Format::bold('mvr', :purple)} <#{Format::underline('find', :cyan)}> <#{Format::underline('replace', :cyan)}> #{Format::colorize('file ...', :cyan)}\n\n"
+  puts Format::bold('DESCRIPTION')
+  puts "    #{Format::bold('mvr', :purple)} is a Ruby script that allows you to rename a group of files and/or folders using a regular expression."
+  puts "    The #{Format::underline('find', :cyan)} parameter uses normal regular expression syntax (there might be Ruby-specific things, but I doubt it)."
+  puts "    The #{Format::underline('replace', :cyan)} parameter is plain text, using #{Format::colorize('\\#', :green)} to insert capture group #{Format::colorize('#', :green)} (so #{Format::colorize('\\1', :green)} to insert the first capture group)."
   puts '    The list of files can be as many items as you want, and you can use typical wildcard expressions.'
-  puts "    Any parameter after #{underline('replace', :cyan)} will be interpreted as a file/folder name that should be included in the list of what to rename.\n\n"
+  puts "    Any parameter after #{Format::underline('replace', :cyan)} will be interpreted as a file/folder name that should be included in the list of what to rename.\n\n"
   puts '    Parameters:'
-  puts "    <#{underline('find', :cyan)}>     The regular expression for the renaming"
-  puts "    <#{underline('replace', :cyan)}>  The text to replace what the regular expression matches (use #{colorize('\\#', :green)} to insert capture group #{colorize('#', :green)} (so #{colorize('\\1', :green)} to insert the first capture group))"
-  puts "    #{colorize('file ...', :cyan)}   The list of files and/or folders to rename"
+  puts "    <#{Format::underline('find', :cyan)}>     The regular expression for the renaming"
+  puts "    <#{Format::underline('replace', :cyan)}>  The text to replace what the regular expression matches (use #{Format::colorize('\\#', :green)} to insert capture group #{Format::colorize('#', :green)} (so #{Format::colorize('\\1', :green)} to insert the first capture group))"
+  puts "    #{Format::colorize('file ...', :cyan)}   The list of files and/or folders to rename"
   exit
 end
 if ARGV.length < 2
-  puts "\n#{boldunderline('Usage')}: #{bold('mvr', :purple)} <#{underline('find', :cyan)}> <#{underline('replace', :cyan)}> #{colorize('file ...', :cyan)}\n\n"
-  puts "Run #{bold('mvr', :purple)} #{bold('help', :cyan)} for command information.  There is also a man page that should be accessible via #{bold('man', :purple)} #{bold('mvr', :cyan)}\n\n"
+  puts "\n#{Format::boldunderline('Usage')}: #{Format::bold('mvr', :purple)} <#{Format::underline('find', :cyan)}> <#{Format::underline('replace', :cyan)}> #{Format::colorize('file ...', :cyan)}\n\n"
+  puts "Run #{Format::bold('mvr', :purple)} #{Format::bold('help', :cyan)} for command information.  There is also a man page that should be accessible via #{Format::bold('man', :purple)} #{Format::bold('mvr', :cyan)}\n\n"
   exit
 end
 replacement = ARGV.shift
@@ -123,14 +121,14 @@ mappings.each do |from, to|
   from2 = from.center(len1)
   to2   = to.center(len2)
   if from == to
-    from2 = colorize(from2, color_opts[:same][:fg], color_opts[:same][:bg])
-    to2 = colorize(to2, color_opts[:same][:fg], color_opts[:same][:bg])
+    from2 = Format::colorize(from2, color_opts[:same][:fg], color_opts[:same][:bg])
+    to2 = Format::colorize(to2, color_opts[:same][:fg], color_opts[:same][:bg])
   elsif duplicated.include?(to)
-    from2 = colorize(from2, color_opts[:conflict][:fg], color_opts[:conflict][:bg])
-    to2 = colorize(to2, color_opts[:conflict][:fg], color_opts[:conflict][:bg])
+    from2 = Format::colorize(from2, color_opts[:conflict][:fg], color_opts[:conflict][:bg])
+    to2 = Format::colorize(to2, color_opts[:conflict][:fg], color_opts[:conflict][:bg])
   else
-    from2 = colorize(from2, color_opts[:normal][:fg], color_opts[:normal][:bg])
-    to2 = colorize(to2, color_opts[:normal][:fg], color_opts[:normal][:bg])
+    from2 = Format::colorize(from2, color_opts[:normal][:fg], color_opts[:normal][:bg])
+    to2 = Format::colorize(to2, color_opts[:normal][:fg], color_opts[:normal][:bg])
   end
   puts "| #{from2} | #{to2} |"
 end

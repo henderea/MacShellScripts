@@ -26,11 +26,11 @@ module Format
       :none   => nil,
   }
 
-  def format(text, format_code)
+  def self::format(text, format_code)
     "\e[#{format_code}m#{text}\e[0m"
   end
 
-  def build_string(bold, underline, fgcolor, bgcolor)
+  def self::build_string(bold, underline, fgcolor, bgcolor)
     str = ''
     hit = false
     if bold
@@ -54,19 +54,19 @@ module Format
     str
   end
 
-  def colorize(text, fgcolor = nil, bgcolor = nil)
-    format(text, build_string(false, false, fgcolor, bgcolor))
+  def self::colorize(text, fgcolor = nil, bgcolor = nil)
+    self::format(text, self::build_string(false, false, fgcolor, bgcolor))
   end
 
-  def bold(text, fgcolor = nil, bgcolor = nil)
-    format(text, build_string(true, false, fgcolor, bgcolor))
+  def self::bold(text, fgcolor = nil, bgcolor = nil)
+    self::format(text, self::build_string(true, false, fgcolor, bgcolor))
   end
 
-  def underline(text, fgcolor = nil, bgcolor = nil)
-    format(text, build_string(false, true, fgcolor, bgcolor))
+  def self::underline(text, fgcolor = nil, bgcolor = nil)
+    self::format(text, self::build_string(false, true, fgcolor, bgcolor))
   end
 
-  def boldunderline(text, fgcolor = nil, bgcolor = nil)
-    format(text, build_string(true, true, fgcolor, bgcolor))
+  def self::boldunderline(text, fgcolor = nil, bgcolor = nil)
+    self::format(text, self::build_string(true, true, fgcolor, bgcolor))
   end
 end

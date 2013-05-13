@@ -9,8 +9,6 @@ require 'lib/format'
 require 'lib/kmeans'
 require 'lib/option'
 
-include Format
-
 options = {
     do_timer:           false,
     skip_tests:         false,
@@ -182,7 +180,7 @@ def update_avg(average, averages, counts, options, result, time1)
 end
 
 def colorize_if_should(text, colors, colored)
-  colored ? colorize(text, colors[:fg], colors[:bg]) : text
+  colored ? Format::colorize(text, colors[:fg], colors[:bg]) : text
 end
 
 def get_avg_message(color_opts, amin, asec, avg, colored, diff, m, s)

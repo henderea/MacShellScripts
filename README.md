@@ -128,7 +128,6 @@ Here are the descriptions for the scripts:
     * **displays:** the k-means for the clusters, using the minimum optimal k
     * **requires:** Ruby, `lib/maputil.rb`, `lib/kmeans.rb`, and `lib/option.rb`
     * **note:** you may need to change the path on the first line of the file to point to your installation of Ruby, but hopefully it will work properly as-is
-    * **requires:** Ruby, `lib/maputil.rb`, and `lib/kmeans.rb`
 * `prg`: run the Mac purge command
     * **displays:** a Growl notification indicating how much memory was freed
     * **requires:** Growl and `growlnotify`
