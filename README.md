@@ -92,6 +92,7 @@ Here are the descriptions for the scripts:
         * `-w` or `--show-average` to show the average(s) before and after the build (average tracking must be enabled) (default is to not show averages)
         * `-b` or `--block-update` to block the average feature from updating the file(s)
         * `-v` or `--override-colors` to override the colors with the ones configured by the `colorconfig` script
+        * `-j` or `--show-projects` to show the `Building <project>` lines when outputting
     * **displays:** a Growl notification indicating success or failure
     * **requires:** Ruby, maven, Growl, `growlnotify`, `lib/format.rb`, `lib/maputil.rb`, `lib/kmeans.rb`, and `lib/option.rb`
     * **note:** `growlnotify` is available in Homebrew and from the Growl website

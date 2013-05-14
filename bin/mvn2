@@ -26,6 +26,7 @@ options = {
     show_average:       false,
     block_update:       false,
     override_colors:    false,
+    show_projects:      false,
 }
 
 option_parser = OptionParser.new { |opts|
@@ -45,6 +46,7 @@ option_parser = OptionParser.new { |opts|
   Option::add_option(options, opts, '-w', '--show-average', :show_average)
   Option::add_option(options, opts, '-b', '--block-update', :block_update)
   Option::add_option(options, opts, '-v', '--override-colors', :override_colors)
+  Option::add_option(options, opts, '-j', '--show-projects', :show_projects)
 }
 
 option_parser.parse!
@@ -210,10 +212,15 @@ def output_lines(output, options)
   lines = output.lines.chompall
   output.clear
 
-  found = false
+  found       = false
+  infoLine    = '[INFO] ------------------------------------------------------------------------'
+  build_regex = /\[INFO\] Building (?!(jar|war))/
 
   lines.each { |line|
-    if options[:hide_between] && found && line.start_with?('Tests run:')
+    if options[:show_projects] && line =~ build_regex
+      puts infoLine
+      puts line
+    elsif options[:hide_between] && found && line.start_with?('Tests run:')
       puts "#{line}\n\n"
       found = false
     elsif found
@@ -222,7 +229,7 @@ def output_lines(output, options)
       puts line
       found = true
     elsif line.start_with?('[INFO] BUILD SUCCESS') || line.start_with?('[INFO] Reactor Summary:') || line.start_with?('[INFO] BUILD FAILURE')
-      puts '[INFO] ------------------------------------------------------------------------'
+      puts infoLine
       puts line
       found = true
     end }
