@@ -5,7 +5,7 @@ $LOAD_PATH << File.dirname(__FILE__)
 require 'lib/format'
 
 message = '| You must pass a positive number to this script |'
-str = Format::bold("+#{'-' * (message.length-2)}+", :white, :red)
+str     = Format::bold("+#{'-' * (message.length-2)}+", :white, :red)
 
 if ARGV.count < 1
   puts "\n#{str}"
@@ -39,7 +39,7 @@ sum = 0
   end
 end
 
-output = "| #{Format::bold('%d', :green)} #{Format::bold('(')}#{Format::bold('%.3f%%', :cyan)} of #{Format::bold('%d', :purple)}#{Format::bold(')')} |" % [sum, (sum.to_f / num.to_f * 100.0), num]
+output  = "| #{Format::bold('%d', :green)} #{Format::bold('(')}#{Format::bold('%.3f%%', :cyan)} of #{Format::bold('%d', :purple)}#{Format::bold(')')} |" % [sum, (sum.to_f / num.to_f * 100.0), num]
 output2 = '| %d (%.3f%% of %d) |' % [sum, (sum.to_f / num.to_f * 100.0), num]
 
 str2 = Format::bold("+#{'-' * (output2.length-2)}+")

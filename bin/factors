@@ -2,31 +2,28 @@
 
 $LOAD_PATH << File.dirname(__FILE__)
 
-require 'lib/format'
 require 'optparse'
+require 'lib/format'
+require 'lib/option'
 
-single_line = false
-delimiter = ', '
+options       = {
+    one_per_line: false,
+    delimiter:    ', ',
+}
 delimiter_set = false
 
 option_parser = OptionParser.new do |opts|
-  opts.on('-1') do
-    single_line = true
+  Option::add_option_block(options, opts, '-1', '--one-per-line', :one_per_line) {
     unless delimiter_set
-      delimiter = nil
-    end
-  end
-
-  opts.on('-d', '--delimiter [DELIMITER]') do |delim|
-    delimiter = delim
-    delimiter_set = true
-  end
+      options[:delimiter] = nil
+    end }
+  Option::add_option_with_param_block(options, opts, '-d', '--delimiter [DELIMITER]', :delimiter) { delimiter_set = true }
 end
 
 option_parser.parse!
 
 message = '| You must pass a positive number to this script |'
-str = Format::bold("+#{'-' * (message.length-2)}+", :white, :red)
+str     = Format::bold("+#{'-' * (message.length-2)}+", :white, :red)
 
 if ARGV.count < 1
   puts "\n#{str}"
@@ -58,8 +55,8 @@ printed = false
 (1..(num / 2.0).floor).each do |i|
   if num % i == 0
     if printed
-      print delimiter unless delimiter.nil?
-      print "\n" if single_line
+      print options[:delimiter] unless options[:delimiter].nil?
+      print "\n" if options[:one_per_line]
     end
     printed = true
     print i

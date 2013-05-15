@@ -19,16 +19,11 @@ delimiter_set = false
 
 option_parser = OptionParser.new { |opts|
   Option::add_option_with_param(options, opts, '-f', '--file FILE', :file)
-  opts.on('-1', '--one-per-line') do
-    options[:one_per_line] = true
+  Option::add_option_block(options, opts, '-1', '--one-per-line', :one_per_line) {
     unless delimiter_set
       options[:delimiter] = nil
-    end
-  end
-  opts.on('-d', '--delimiter [DELIMITER]') do |delim|
-    options[:delimiter] = delim
-    delimiter_set       = true
-  end
+    end }
+  Option::add_option_with_param_block(options, opts, '-d', '--delimiter [DELIMITER]', :delimiter) { delimiter_set = true }
   Option::add_option_with_param_and_type(options, opts, '-s', '--sensitivity LEVEL', :sensitivity, Float)
   Option::add_option_with_param_and_type(options, opts, '-k', '--k-value KVALUE', :k_value, Integer)
 }

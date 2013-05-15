@@ -36,10 +36,10 @@ Here are the descriptions for the scripts:
     * **required parameters:**
         * the number (a positive integer)
     * **optional parameters:**
-        * `-1` to output one per line; disables default delimeter
+        * `-1` or `--one-per-line` to output one per line; disables default delimeter
         * `-d DELIM` or `--delimiter DELIM` to use `DELIM` as the delimiter; overrides delimiter disable of `-1`; leaving `DELIM` blank will disable the delimiter
     * **displays:** prints the factors separated by a delimiter (if not disabled).  If `-1` has been specified, the factors will be on separate lines
-    * **requires:** Ruby and `lib/format.rb`
+    * **requires:** Ruby, `lib/format.rb`, and `lib/option.rb`
 * `factorsum`: find the sum of the factors of a number and output it along with the percentage it is of the number
     * **parameters:**
         * the number (a positive integer)

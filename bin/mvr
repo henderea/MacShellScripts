@@ -9,7 +9,7 @@ require 'lib/option'
 
 options = {
     exclude_extension: false,
-    override_colors: false,
+    override_colors:   false,
 }
 
 option_parser = OptionParser.new { |opts|
@@ -122,13 +122,13 @@ mappings.each do |from, to|
   to2   = to.center(len2)
   if from == to
     from2 = Format::colorize(from2, color_opts[:same][:fg], color_opts[:same][:bg])
-    to2 = Format::colorize(to2, color_opts[:same][:fg], color_opts[:same][:bg])
+    to2   = Format::colorize(to2, color_opts[:same][:fg], color_opts[:same][:bg])
   elsif duplicated.include?(to)
     from2 = Format::colorize(from2, color_opts[:conflict][:fg], color_opts[:conflict][:bg])
-    to2 = Format::colorize(to2, color_opts[:conflict][:fg], color_opts[:conflict][:bg])
+    to2   = Format::colorize(to2, color_opts[:conflict][:fg], color_opts[:conflict][:bg])
   else
     from2 = Format::colorize(from2, color_opts[:normal][:fg], color_opts[:normal][:bg])
-    to2 = Format::colorize(to2, color_opts[:normal][:fg], color_opts[:normal][:bg])
+    to2   = Format::colorize(to2, color_opts[:normal][:fg], color_opts[:normal][:bg])
   end
   puts "| #{from2} | #{to2} |"
 end

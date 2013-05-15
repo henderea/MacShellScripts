@@ -22,7 +22,7 @@ module Enumerable
   def std_dev
     avg = average
     cnt = count.to_f
-    su = summap { |v| (v.to_f - avg.to_f) ** 2 }
+    su  = summap { |v| (v.to_f - avg.to_f) ** 2 }
     Math.sqrt(su / cnt)
   end
 
@@ -63,6 +63,6 @@ module Enumerable
   end
 
   def join(join_str)
-    map(&:to_s).reduce { |a, b| a << join_str << b}
+    map(&:to_s).reduce { |a, b| a << join_str << b }
   end
 end

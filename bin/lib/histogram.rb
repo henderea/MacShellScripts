@@ -4,13 +4,13 @@ require 'maputil'
 
 module Enumerable
   def histogram(ks = nil, width = 100, height = 50)
-    mi = min
-    ma = max
-    diff = ma - mi
-    step = diff.to_f / width.to_f
+    mi     = min
+    ma     = max
+    diff   = ma - mi
+    step   = diff.to_f / width.to_f
     counts = Array.new(width, 0)
     each { |v|
-      i = ((v - mi).to_f / (step + 1).to_f).floor
+      i         = ((v - mi).to_f / (step + 1).to_f).floor
       counts[i] += 1
     }
     max_y = counts.max
@@ -24,7 +24,7 @@ module Enumerable
     unless ks.nil?
       lines[height] = ' ' * width
       ks.each { |v|
-        i = ((v - mi) / step).to_i
+        i                = ((v - mi) / step).to_i
         lines[height][i] = '|'
       }
     end
