@@ -212,26 +212,37 @@ def output_lines(output, options)
   lines = output.lines.chompall
   output.clear
 
-  found       = false
-  infoLine    = '[INFO] ------------------------------------------------------------------------'
-  build_regex = /\[INFO\] Building (?!(jar|war))/
+  found          = false
+  info_line      = '[INFO] ------------------------------------------------------------------------'
+  build_regex    = /\[INFO\] Building (?!(jar|war))/
+  info_line_last = false
 
   lines.each { |line|
     if options[:show_projects] && line =~ build_regex
-      puts infoLine
+      unless info_line_last
+        puts info_line
+      end
       puts line
+      puts info_line
+      info_line_last = true
     elsif options[:hide_between] && found && line.start_with?('Tests run:')
       puts "#{line}\n\n"
-      found = false
+      found          = false
+      info_line_last = false
     elsif found
       puts line
+      info_line_last = line.start_with?(info_line)
     elsif line.start_with?('[ERROR] COMPILATION ERROR :') || line.start_with?('Results :')
       puts line
-      found = true
+      found          = true
+      info_line_last = false
     elsif line.start_with?('[INFO] BUILD SUCCESS') || line.start_with?('[INFO] Reactor Summary:') || line.start_with?('[INFO] BUILD FAILURE')
-      puts infoLine
+      unless info_line_last
+        puts info_line
+      end
       puts line
-      found = true
+      found          = true
+      info_line_last = false
     end }
 
   lines.each { |line| puts line } unless found
