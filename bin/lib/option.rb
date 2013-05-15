@@ -10,4 +10,16 @@ module Option
   def self.add_option_with_param_and_type(options, opts, short_name, long_name, opt_name, type)
     opts.on(short_name, long_name, type) { |name| options[opt_name] = name }
   end
+
+  def self.add_option_single(options, opts, name, opt_name)
+    opts.on(name) { options[opt_name] = true }
+  end
+
+  def self.add_option_with_param_single(options, opts, name, opt_name)
+    opts.on(name) { |name| options[opt_name] = name }
+  end
+
+  def self.add_option_with_param_and_type_single(options, opts, name, opt_name, type)
+    opts.on(name, type) { |name| options[opt_name] = name }
+  end
 end

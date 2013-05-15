@@ -9,7 +9,7 @@ require 'lib/format'
 require 'lib/kmeans'
 require 'lib/option'
 
-options = {
+options       = {
     do_timer:           false,
     skip_tests:         false,
     no_sticky:          false,
@@ -27,8 +27,13 @@ options = {
     block_update:       false,
     override_colors:    false,
     show_projects:      false,
+    run_before:         nil,
+    run_after:          nil,
+    run_success:        nil,
+    run_failure:        nil,
 }
-
+#abcd   h jkl n p  stuvw
+#    efg i   m o qr     xyz0123456789
 option_parser = OptionParser.new { |opts|
   Option::add_option(options, opts, '-t', '--timer', :do_timer)
   Option::add_option(options, opts, '-s', '--skip-tests', :skip_tests)
@@ -38,15 +43,19 @@ option_parser = OptionParser.new { |opts|
   Option::add_option(options, opts, '-u', '--track-full-average', :track_full_average)
   Option::add_option(options, opts, '-c', '--colored', :colored)
   Option::add_option(options, opts, '-l', '--write-log', :write_log)
-  Option::add_option_with_param(options, opts, '-f', '--log-file NAME', :log_file)
+  Option::add_option_with_param_single(options, opts, '--log-file NAME', :log_file)
   Option::add_option(options, opts, '-d', '--advanced-average', :advanced_average)
-  Option::add_option_with_param(options, opts, '-o', '--command-override CMD', :command_override)
+  Option::add_option_with_param_single(options, opts, '--command-override CMD', :command_override)
   Option::add_option(options, opts, '-p', '--package', :package)
   Option::add_option(options, opts, '-h', '--hide-between', :hide_between)
   Option::add_option(options, opts, '-w', '--show-average', :show_average)
   Option::add_option(options, opts, '-b', '--block-update', :block_update)
   Option::add_option(options, opts, '-v', '--override-colors', :override_colors)
   Option::add_option(options, opts, '-j', '--show-projects', :show_projects)
+  Option::add_option_with_param_single(options, opts, '--run-before CMD', :run_before)
+  Option::add_option_with_param_single(options, opts, '--run-after CMD', :run_after)
+  Option::add_option_with_param_single(options, opts, '--run-success CMD', :run_success)
+  Option::add_option_with_param_single(options, opts, '--run-failure CMD', :run_failure)
 }
 
 option_parser.parse!
@@ -297,6 +306,21 @@ def run_and_filter_output(color_opts, options, cmd)
   result
 end
 
+def run_cmd(cmd)
+  unless cmd.nil?
+    puts "$ #{cmd}"
+    `#{cmd}`
+    print "\n"
+  end
+end
+
+run_cmd(options[:run_before])
 result = options[:display_all] ? system(cmd) : run_and_filter_output(color_opts, options, cmd)
+run_cmd(options[:run_after])
+if result
+  run_cmd(options[:run_success])
+else
+  run_cmd(options[:run_failure])
+end
 
 `growlnotify -n Terminal -a Terminal#{(options[:no_sticky] ? '' : ' -s')} -m "#{(options[:command_override].nil? ? (options[:skip_tests] ? 'Build' : 'Tests') : 'Operation')} #{(result ? 'Successful' : 'Failed')}" -t "#{cmd[0...-5]}"`

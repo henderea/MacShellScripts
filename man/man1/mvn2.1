@@ -20,15 +20,19 @@
 .Op Fl u | -track-full-average
 .Op Fl c | -colored
 .Op Fl l | -write-log
-.Op Fl f Ar name | Fl -log-file Ar name
+.Op Fl -log-file Ar name
 .Op Fl d | -advanced-average
-.Op Fl o Ar cmd | Fl -command-override Ar cmd
+.Op Fl -command-override Ar cmd
 .Op Fl p | -package
 .Op Fl h | -hide-between
 .Op Fl w | -show-average
 .Op Fl b | -block-update
 .Op Fl v | -override-colors
 .Op Fl j | -show-projects
+.Op Fl -run-before Ar cmd
+.Op Fl -run-after Ar cmd
+.Op Fl -run-success Ar cmd
+.Op Fl -run-failure Ar cmd
 .Sh DESCRIPTION          \" Section Header - required - don't modify
 .Nm
 is a Ruby script that runs a maven build, including (or not including) tests, and only outputs the lines that come after a compile failure, build success, or test result start line
@@ -55,13 +59,13 @@ is specified, "avg.txt" will still be updated)
 display some colors in the timer/progress message
 .It Fl l | -write-log
 write all of the output to a log file (default is to not write to a log file)
-.It Fl f Ar name | Fl -log-file Ar name
+.It Fl -log-file Ar name
 set the log file name to
 .Ar name
 (default is "build.log")
 .It Fl d | -advanced-average
 use k-means (with minimum optimal k) to find a list of averages and use the closest one for the progress bar and displayed average (default is to use overall average)
-.It Fl o Ar cmd | Fl -command-override Ar cmd
+.It Fl -command-override Ar cmd
 override the maven command (disables average tracking options and skip test option) (default is "clean install" (with optional "-D skipTests") and not disabling any options)
 .It Fl p | -package
 run "mvn clean package" (with optional "-D skipTests") (default is "mvn clean install" (with optional "-D skipTests") (supports average tracking)
@@ -75,5 +79,13 @@ block the average feature from updating the file(s)
 override the colors with the ones configured by the colorconfig script
 .It Fl j | -show-projects
 show the "Building <project>" lines when outputting
+.It Fl -run-before Ar cmd
+run "CMD" before calling the maven build
+.It Fl -run-after Ar cmd
+run "CMD" after finishing the maven build
+.It Fl -run-success Ar cmd
+run "CMD" after finishing a successful maven build
+.It Fl -run-failure Ar cmd
+run "CMD" after finishing an unsuccessful maven build
 .El                      \" Ends the list
 .Pp

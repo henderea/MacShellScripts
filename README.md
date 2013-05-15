@@ -84,15 +84,19 @@ Here are the descriptions for the scripts:
         * `-u` or `--track-full-average` to update the average list (stored in `avg-skip.txt` or `avg-test.txt`) and also display a progress bar while the build is in progress (default is to not do track average or display progress bar) (including this option will cause the progress bar to use the average calculated from the average list if available, but if `-k` or `--track-average` is specified, `avg.txt` will still be updated)
         * `-c` or `--colored` to display some colors in the timer/progress message
         * `-l` or `--write-log` to write all of the output to a log file (default is to not write to a log file)
-        * `-f NAME` or `--log-file NAME` to set the log file name to `NAME` (default is `build.log`)
+        * `--log-file NAME` to set the log file name to `NAME` (default is `build.log`)
         * `-d` or `--advanced-average` to use k-means (with minimum optimal k) to find a list of averages and use the closest one for the progress bar and displayed average (default is to use overall average)
-        * `-o` or `--command-override` to override the maven command (disables average tracking options and skip test option) (default is `clean install` (with optional `-D skipTests`) and not disabling any options)
+        * `--command-override CMD` to override the maven command (disables average tracking options and skip test option) (default is `clean install` (with optional `-D skipTests`) and not disabling any options)
         * `-p` or `--package` to run `mvn clean package` (with optional `-D skipTests`) (default is `mvn clean install` (with optional `-D skipTests`) (supports average tracking)
         * `-h` or `--hide-between` to hide the output between the end of test results (the line starting with "Tests run:") and the next trigger line
         * `-w` or `--show-average` to show the average(s) before and after the build (average tracking must be enabled) (default is to not show averages)
         * `-b` or `--block-update` to block the average feature from updating the file(s)
         * `-v` or `--override-colors` to override the colors with the ones configured by the `colorconfig` script
         * `-j` or `--show-projects` to show the `Building <project>` lines when outputting
+        * `--run-before CMD` to run `CMD` before calling the maven build
+        * `--run-after CMD` to run `CMD` after finishing the maven build
+        * `--run-success CMD` to run `CMD` after finishing a successful maven build
+        * `--run-failure CMD` to run `CMD` after finishing an unsuccessful maven build
     * **displays:** a Growl notification indicating success or failure
     * **requires:** Ruby, maven, Growl, `growlnotify`, `lib/format.rb`, `lib/maputil.rb`, `lib/kmeans.rb`, and `lib/option.rb`
     * **note:** `growlnotify` is available in Homebrew and from the Growl website
