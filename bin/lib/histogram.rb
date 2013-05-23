@@ -7,10 +7,10 @@ module Enumerable
     mi     = min
     ma     = max
     diff   = ma - mi
-    step   = diff.to_f / width.to_f
+    step   = diff.to_f / (width.to_f - 1)
     counts = Array.new(width, 0)
     each { |v|
-      i         = ((v - mi).to_f / (step + 1).to_f).floor
+      i         = ((v - mi).to_f / step.to_f).floor
       counts[i] += 1
     }
     max_y = counts.max
@@ -20,6 +20,9 @@ module Enumerable
       ((height - h)...height).each { |j|
         lines[j][i] = '#'
       }
+      if h == 0 && counts[i] > 0
+        lines[height - 1][i] = '_'
+      end
     }
     unless ks.nil?
       lines[height] = ' ' * width

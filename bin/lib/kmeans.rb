@@ -76,30 +76,29 @@ module Enumerable
     su  = sum
     cnt = count
     avg = su / cnt
-    kso = kmeans(1)
+    ks1 = kmeans(1)
     if cnt == 1
       return kso
     end
-    cso = get_clusters(kso)
-    fto = f_test2(cso, kso, cnt)
+    cso = get_clusters(ks1)
+    ft1 = f_test2(cso, ks1, cnt)
     ks  = kmeans(2)
     cs  = get_clusters(ks)
     ft  = f_test(cs, ks, cnt, avg)
     ft2 = f_test2(cs, ks, cnt)
-    if ft2 >= fto
-      return kso
-    end
     (3..[max_k, cnt].min).each { |k|
-      kso = ks
-      fto = ft
-      ks  = kmeans(k)
-      cs  = get_clusters(ks)
-      ft  = f_test(cs, ks, cnt, avg)
-      if ((ft - fto) / fto) < threshold
+      kso  = ks
+      fto  = ft
+      fto2 = ft2
+      ks   = kmeans(k)
+      cs   = get_clusters(ks)
+      ft   = f_test(cs, ks, cnt, avg)
+      ft2  = f_test2(cs, ks, cnt)
+      if ((ft - fto) / fto) < threshold && fto2 < ft1
         return kso
       end
     }
-    ks
+    ft2 >= ft1 ? ks1 : ks
   end
 
   def kmeans(k)

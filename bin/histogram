@@ -1,0 +1,61 @@
+#!/usr/bin/env ruby
+
+$LOAD_PATH << File.dirname(__FILE__)
+
+require 'optparse'
+require 'lib/maputil'
+require 'lib/kmeans'
+require 'lib/histogram'
+require 'lib/option'
+
+options = {
+    file:    nil,
+    width:   100,
+    height:  50,
+    k_value: nil,
+}
+
+option_parser = OptionParser.new { |opts|
+  Option::add_option_with_param(options, opts, '-f', '--file FILE', :file)
+  Option::add_option_with_param_and_type(options, opts, '-k', '--k-value KVAL', :k_value, Integer)
+  Option::add_option_with_param_and_type(options, opts, '-w', '--width WIDTH', :width, Integer)
+  Option::add_option_with_param_and_type(options, opts, '-h', '--height HEIGHT', :height, Integer)
+}
+
+option_parser.parse!
+
+data = []
+
+if options[:file].nil?
+  val = nil
+  i   = 0
+  begin
+    begin
+      val = gets.chomp
+      if val.length > 0
+        data[i] = val.to_f
+        i       += 1
+      end
+    rescue
+      # ignored
+    end
+  end until val.nil? || val.length <= 0 || $stdin.eof?
+else
+  if File.exist?(options[:file])
+    data = IO.readlines(options[:file]).filtermap { |v|
+      begin
+        f = v.chomp
+        f.length == 0 || (f =~ /^\d+(\.\d+)?$/).nil? ? false : f.to_f
+      rescue
+        false
+      end
+    }
+  else
+    puts "File '#{options[:file]}' does not exist!"
+    exit 1
+  end
+end
+
+ks = options[:k_value].nil? ? data.nmeans : data.kmeans(options[:k_value])
+
+puts data.histogram(ks, options[:width], options[:height])
