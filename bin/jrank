@@ -71,14 +71,16 @@ if len2 < 5
   len2 = 5
 end
 
-border = "+#{'-' * (len1+2)}+#{'-' * (len2+2)}+"
+padding = 5
+
+border = "+#{'-' * (len1+(padding*2))}+#{'-' * (len2+(padding*2))}+"
 
 puts border
-puts "| #{'User'.center(len1)} | #{'Score'.center(len2)} |"
+puts "|#{' ' * padding}#{'User'.center(len1)}#{' ' * padding}|#{' ' * padding}#{'Score'.center(len2)}#{' ' * padding}|"
 puts border
 
 data.each { |kv|
-  puts "| #{kv[0].to_s.center(len1)} | #{kv[1].to_s.center(len2)} |"
+  puts "|#{' ' * padding}#{kv[0].to_s.center(len1)}#{' ' * padding}|#{' ' * padding}#{kv[1].to_s.center(len2)}#{' ' * padding}|"
   #puts border
 }
 
