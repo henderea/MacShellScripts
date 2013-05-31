@@ -1,0 +1,68 @@
+#!/usr/bin/env ruby
+
+$LOAD_PATH << File.dirname(__FILE__)
+
+require 'net/http'
+require 'lib/maputil'
+
+source = Net::HTTP.get('ci2.plab.interactions.net', '/cigame/?', 8080)
+
+match_str = '>Score</td></tr><tr>'
+match_str2 = '</tr></table>'
+ind = source.index(match_str)
+ind2 = source.index(match_str2, ind)
+
+str = source[(ind+match_str.length)...ind2]
+
+regex = %r{</tr><tr>}
+regex2 = %r{<td><a.*?>(.*?)</a></td><td>.*?</td><td>(.*?)</td>}
+
+parts = str.split(regex)
+
+data = {}
+
+parts.each { |v|
+  matcher = regex2.match(v)
+  unless matcher.nil?
+    data[matcher[1]] = matcher[2].to_f.round
+  end
+}
+
+data2 = data.sort_by { |k, v| -(v.abs) }
+
+data = {}
+data2.each { |v|
+  data[v[0]] = v[1]
+}
+
+len1 = data.keys.max do |a, b|
+  a.to_s.length <=> b.to_s.length
+end
+
+len2 = data.values.max do |a, b|
+  a.to_s.length <=> b.to_s.length
+end
+
+len1 = len1.to_s.length
+len2 = len2.to_s.length
+
+if len1 < 4
+  len1 = 4
+end
+
+if len2 < 5
+  len2 = 5
+end
+
+border = "+#{'-' * (len1+2)}+#{'-' * (len2+2)}+"
+
+puts border
+puts "| #{'User'.center(len1)} | #{'Score'.center(len2)} |"
+puts border
+
+data.each { |kv|
+  puts "| #{kv[0].to_s.center(len1)} | #{kv[1].to_s.center(len2)} |"
+  #puts border
+}
+
+puts border
