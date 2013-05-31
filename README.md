@@ -53,6 +53,7 @@ Here are the descriptions for the scripts:
 * `jrank`: get jenkins rankings.  It gets data from <http://ci2.plab.interactions.net:8080/cigame/?> and sorts the scores in descending order by absolute value.
     * **optional parameters:**
         * `-a` or `--adjust-scores` to adjust the scores by subtracting the average score from each score
+        * `-b` or `--show-both` to show both the adjusted score ranking and the regular score ranking
     * **displays:** prints a table with the usernames and scores with higher scores closer to the top of the table
     * **requires:** Ruby and `lib/maputil.rb`
 * `jscomp`: use the Closure JavaScript compiler to compile and minify a JavaScript file
