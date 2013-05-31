@@ -83,8 +83,8 @@ if len3 < 14
   len3 = 14
 end
 
-def make_line(str0, str1, str2, datab_any, datab_only, data_both, joinstr = '|')
-  vals = [str0]
+def make_line(str0, str1, str0b, str2, datab_any, datab_only, data_both, joinstr = '|')
+  vals = [datab_any ? str0b : str0]
   vals << str2 if datab_any
   vals << str0 if data_both
   vals << str1 unless datab_only
@@ -93,20 +93,20 @@ end
 
 padding = 5
 
-border = make_line("#{'-' * (len1+(padding*2))}", "#{'-' * (len2+(padding*2))}", "#{'-' * (len3+(padding*2))}", datab_any, datab_only, show_both, '+')
+border = make_line("#{'-' * (len1+(padding*2))}", "#{'-' * (len2+(padding*2))}", "#{'-' * (len1+(padding*2))}", "#{'-' * (len3+(padding*2))}", datab_any, datab_only, show_both, '+')
 
 user_str   = "#{' ' * padding}#{'User'.center(len1)}#{' ' * padding}"
 score_str1 = "#{' ' * padding}#{'Score'.center(len2)}#{' ' * padding}"
 score_str2 = "#{' ' * padding}#{'Adjusted Score'.center(len3)}#{' ' * padding}"
 
 puts border
-puts make_line(user_str, score_str1, score_str2, datab_any, datab_only, show_both)
+puts make_line(user_str, score_str1, user_str, score_str2, datab_any, datab_only, show_both)
 puts border
 
 (0...data.count).each { |i|
   kv1 = data[i]
   kv2 = datab[i]
-  puts make_line("#{' ' * padding}#{kv1[0].to_s.center(len1)}#{' ' * padding}", "#{' ' * padding}#{kv1[1].to_s.center(len2)}#{' ' * padding}", "#{' ' * padding}#{kv2[1].to_s.center(len3)}#{' ' * padding}", datab_any, datab_only, show_both)
+  puts make_line("#{' ' * padding}#{kv1[0].to_s.center(len1)}#{' ' * padding}", "#{' ' * padding}#{kv1[1].to_s.center(len2)}#{' ' * padding}", "#{' ' * padding}#{kv2[0].to_s.center(len1)}#{' ' * padding}", "#{' ' * padding}#{kv2[1].to_s.center(len3)}#{' ' * padding}", datab_any, datab_only, show_both)
   #puts border
 }
 
