@@ -2,8 +2,17 @@
 
 $LOAD_PATH << File.dirname(__FILE__)
 
+require 'optparse'
 require 'net/http'
 require 'lib/maputil'
+
+adjust_scores = false
+
+option_parser = OptionParser.new { |opts|
+  opts.on('-a', '--adjust-scores') { adjust_scores = true }
+}
+
+option_parser.parse!
 
 source = Net::HTTP.get('ci2.plab.interactions.net', '/cigame/?', 8080)
 
@@ -27,6 +36,13 @@ parts.each { |v|
     data[matcher[1]] = matcher[2].to_f.round
   end
 }
+
+if adjust_scores
+  avg = data.values.average.round
+  data.keys.each { |k|
+    data[k] = data[k] - avg
+  }
+end
 
 data2 = data.sort_by { |k, v| -(v.abs) }
 
