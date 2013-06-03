@@ -45,7 +45,7 @@ parts.each { |v|
 datab = {}
 
 avg = data.values.average.round
-puts "Average: #{avg}" if adjust_scores
+puts "Average: #{avg}" if datab_any
 data.keys.each { |k|
   datab[k] = data[k] - avg
 }
