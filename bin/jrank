@@ -15,6 +15,7 @@ options = {
     update:          false,
     update_interval: 60,
     track_movement:  false,
+    clear_screen:    false,
 }
 
 option_parser = OptionParser.new { |opts|
@@ -23,9 +24,14 @@ option_parser = OptionParser.new { |opts|
   Option::add_option(options, opts, '-u', '--update', :update)
   Option::add_option_with_param_and_type(options, opts, '-i', '--update-interval INTERVAL', :update_interval, Integer)
   Option::add_option(options, opts, '-t', '--track-movement', :track_movement)
+  Option::add_option(options, opts, '-c', '--clear-screen', :clear_screen)
 }
 
 option_parser.parse!
+
+if options[:clear_screen]
+  system('clear')
+end
 
 datab_only = options[:adjust_scores] && !options[:show_both]
 datab_any  = options[:adjust_scores] || options[:show_both]
