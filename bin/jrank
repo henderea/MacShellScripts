@@ -16,6 +16,7 @@ options = {
     update_interval: 60,
     track_movement:  false,
     clear_screen:    false,
+    show_diff:       false,
 }
 
 option_parser = OptionParser.new { |opts|
@@ -25,6 +26,7 @@ option_parser = OptionParser.new { |opts|
   Option::add_option_with_param_and_type(options, opts, '-i', '--update-interval INTERVAL', :update_interval, Integer)
   Option::add_option(options, opts, '-t', '--track-movement', :track_movement)
   Option::add_option(options, opts, '-c', '--clear-screen', :clear_screen)
+  Option::add_option(options, opts, '-d', '--show-diff', :show_diff)
 }
 
 option_parser.parse!
@@ -53,17 +55,29 @@ def find_index(uname, data)
   data.nil? ? nil : data.find_index { |i| i[0] == uname }
 end
 
+def get_diff(v, i2, prev_data)
+  i2.nil? ? nil : v[1] - prev_data[i2][1]
+end
+
 def add_diffs(data, prev_data)
   arrow_up   = Format::colorize("\u2191", :green)
   arrow_down = Format::colorize("\u2193", :red)
   new_data   = []
   data.each_with_index { |v, i|
-    i2 = find_index(v[0], prev_data)
-    d  = i2.nil? ? nil : i2 <=> i
-    c  = d.nil? ? '?' : (d == 0 ? '-' : (d < 0 ? arrow_down : arrow_up))
-    new_data << [v[0], v[1], c]
+    i2    = find_index(v[0], prev_data)
+    d     = i2.nil? ? nil : i2 <=> i
+    c     = d.nil? ? '?' : (d == 0 ? '-' : (d < 0 ? arrow_down : arrow_up))
+    diff  = get_diff(v, i2, prev_data)
+    diff2 = " (#{diff.nil? ? '?' : (diff == 0 ? diff : (diff < 0 ? Format::colorize(diff, :red) : Format::colorize(diff, :green)))})"
+    new_data << [v[0], v[1], c, diff2, (diff.nil? ? 1 : diff.to_s.length) + 3]
   }
   new_data
+end
+
+def mycenter(text, len, tlen)
+  b = ((len - tlen) / 2).floor
+  a = len - tlen - b
+  "#{' ' * b}#{text}#{' ' * a}"
 end
 
 fname  = File.expand_path('~/jranka.yaml')
@@ -73,7 +87,7 @@ begin
   previous_data  = nil
   previous_datab = nil
 
-  if options[:track_movement]
+  if options[:track_movement] || options[:show_diff]
     previous_data = YAML::load_file(fname) if File.exist?(fname)
     previous_datab = YAML::load_file(fnameb) if File.exist?(fnameb)
   end
@@ -113,7 +127,7 @@ begin
 
   datab = datab.sort_by { |k, v| -(v.abs) }
 
-  if options[:track_movement]
+  if options[:track_movement] || options[:show_diff]
     IO::write(fname, data.to_yaml)
     IO::write(fnameb, datab.to_yaml)
   end
@@ -122,13 +136,9 @@ begin
 
   datab2 = add_diffs(datab, previous_datab)
 
-  len1 = data.max do |a, b|
-    a[0].to_s.length <=> b[0].to_s.length
-  end
+  len1 = data.max { |a, b| a[0].to_s.length <=> b[0].to_s.length }
 
-  len2 = data.max do |a, b|
-    a[1].to_s.length <=> b[1].to_s.length
-  end
+  len2 = data.max { |a, b| a[1].to_s.length <=> b[1].to_s.length }
 
   len1 = len1.to_s.length
   len2 = len2.to_s.length
@@ -141,15 +151,20 @@ begin
     len2 = 5
   end
 
-  len3 = datab.max do |a, b|
-    a[1].to_s.length <=> b[1].to_s.length
-  end
+  len3 = datab.max { |a, b| a[1].to_s.length <=> b[1].to_s.length }
 
   len3 = len3.to_s.length
 
   if len3 < 14
     len3 = 14
   end
+
+  len4 = (data2.max { |a, b| a[4] <=> b[4] })[4]
+
+  len5 = (datab2.max { |a, b| a[4] <=> b[4] })[4]
+
+  len2 += len4 if options[:show_diff]
+  len3 += len5 if options[:show_diff]
 
   padding = 5
 
@@ -163,19 +178,17 @@ begin
   puts make_line(user_str, score_str1, user_str, score_str2, datab_any, datab_only, options[:show_both])
   puts border
 
-  if options[:track_movement]
-    (0...data2.count).each { |i|
-      kv1 = data2[i]
-      kv2 = datab2[i]
-      puts make_line("#{' ' * padding}#{kv1[0].to_s.center(len1)}#{kv1[2]}#{' ' * padding}", "#{' ' * padding}#{kv1[1].to_s.center(len2)}#{' ' * padding}", "#{' ' * padding}#{kv2[0].to_s.center(len1)}#{kv2[2]}#{' ' * padding}", "#{' ' * padding}#{kv2[1].to_s.center(len3)}#{' ' * padding}", datab_any, datab_only, options[:show_both])
-    }
-  else
-    (0...data.count).each { |i|
-      kv1 = data[i]
-      kv2 = datab[i]
-      puts make_line("#{' ' * padding}#{kv1[0].to_s.center(len1)}#{' ' * padding}", "#{' ' * padding}#{kv1[1].to_s.center(len2)}#{' ' * padding}", "#{' ' * padding}#{kv2[0].to_s.center(len1)}#{' ' * padding}", "#{' ' * padding}#{kv2[1].to_s.center(len3)}#{' ' * padding}", datab_any, datab_only, options[:show_both])
-    }
-  end
+  (0...data2.count).each { |i|
+    kv1 = data2[i]
+    kv2 = datab2[i]
+    ds1 = options[:show_diff] ? kv1[3] : ''
+    ds2 = options[:show_diff] ? kv2[3] : ''
+    sl1 = kv1[1].to_s.length + (options[:show_diff] ? kv1[4] : 0)
+    sl2 = kv2[1].to_s.length + (options[:show_diff] ? kv2[4] : 0)
+    as1 = options[:track_movement] ? kv1[2] : ''
+    as2 = options[:track_movement] ? kv2[2] : ''
+    puts make_line("#{' ' * padding}#{kv1[0].to_s.center(len1)}#{as1}#{' ' * padding}", "#{' ' * padding}#{mycenter("#{kv1[1]}#{ds1}", len2, sl1)}#{' ' * padding}", "#{' ' * padding}#{kv2[0].to_s.center(len1)}#{as2}#{' ' * padding}", "#{' ' * padding}#{mycenter("#{kv2[1]}#{ds2}", len3, sl2)}#{' ' * padding}", datab_any, datab_only, options[:show_both])
+  }
 
   puts border
 
