@@ -7,6 +7,7 @@ require 'net/http'
 require 'yaml'
 require 'lib/maputil'
 require 'lib/option'
+require 'lib/format'
 
 options = {
     adjust_scores:   false,
@@ -47,8 +48,8 @@ def find_index(uname, data)
 end
 
 def add_diffs(data, prev_data)
-  arrow_up   = "\u2191"
-  arrow_down = "\u2193"
+  arrow_up   = Format::colorize("\u2191", :green)
+  arrow_down = Format::colorize("\u2193", :red)
   new_data   = []
   data.each_with_index { |v, i|
     i2 = find_index(v[0], prev_data)
