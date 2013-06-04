@@ -1,0 +1,53 @@
+#!/usr/bin/env ruby
+
+$LOAD_PATH << File.dirname(__FILE__)
+
+require 'curses'
+require 'lib/maputil'
+require 'lib/format'
+
+def myputs(text, win)
+  myprint("#{text}\n", win)
+end
+
+def myprint(text, win)
+  if win.nil?
+    print text
+  else
+    if text.include?("\e")
+      pieces = text.scan(/#{"\e"}\[(\d+)m([^#{"\e"}]+?)#{"\e"}\[0m|([^#{"\e"}]+)/)
+      pieces.each { |v|
+        if v[2].nil?
+          win.attron(Curses::color_pair(v[0].to_s == '31' ? Curses::COLOR_RED : Curses::COLOR_GREEN) | Curses::A_NORMAL) {
+            win << v[1]
+          }
+        else
+          win << v[2]
+        end
+      }
+    else
+      win << text
+    end
+    win.refresh
+  end
+end
+
+Curses::init_screen
+win = Curses::stdscr
+win.clear
+win.scrollok(true)
+Curses::start_color
+Curses::use_default_colors
+Curses::init_pair(Curses::COLOR_RED, Curses::COLOR_RED, -1)
+Curses::init_pair(Curses::COLOR_GREEN, Curses::COLOR_GREEN, -1)
+
+win.setpos(0, 0)
+
+arrow_up   = Format::colorize("\u2191", :green)
+arrow_down = Format::colorize("\u2193", :red)
+
+myputs("#{arrow_up}|#{arrow_down}|#{Format::colorize('10', :green)}", win)
+
+win.getch
+
+Curses::close_screen

@@ -90,6 +90,9 @@ def mycenter(text, len, tlen)
 end
 
 def has_change(data, prev_data)
+  if prev_data.nil?
+    return false
+  end
   rval = false
   data.each_with_index { |v, i|
     v2 = prev_data[i]
@@ -133,6 +136,7 @@ if options[:update]
   win.clear
   win.scrollok(true)
   Curses::start_color
+  Curses::use_default_colors
   Curses::init_pair(Curses::COLOR_RED, Curses::COLOR_RED, -1)
   Curses::init_pair(Curses::COLOR_GREEN, Curses::COLOR_GREEN, -1)
 end
@@ -266,5 +270,5 @@ begin
     end
   end while options[:update]
 ensure
-  win.close unless win.nil?
+  Curses::close_screen unless win.nil?
 end
