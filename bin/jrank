@@ -10,14 +10,16 @@ require 'lib/option'
 require 'lib/format'
 
 options = {
-    adjust_scores:   false,
-    show_both:       false,
-    update:          false,
-    update_interval: 60,
-    track_movement:  false,
-    clear_screen:    false,
-    show_diff:       false,
-    wait_on_change:  false,
+    adjust_scores:    false,
+    show_both:        false,
+    update:           false,
+    update_interval:  60,
+    track_movement:   false,
+    clear_screen:     false,
+    show_diff:        false,
+    wait_on_change:   false,
+    notify_of_change: false,
+    notify_sticky:    false,
 }
 
 option_parser = OptionParser.new { |opts|
@@ -29,6 +31,8 @@ option_parser = OptionParser.new { |opts|
   Option::add_option(options, opts, '-c', '--clear-screen', :clear_screen)
   Option::add_option(options, opts, '-d', '--show-diff', :show_diff)
   Option::add_option(options, opts, '-w', '--wait-on-change', :wait_on_change)
+  Option::add_option(options, opts, '-n', '--notify-of-change', :notify_of_change)
+  Option::add_option(options, opts, '-s', '--notify-sticky', :notify_sticky)
 }
 
 option_parser.parse!
@@ -204,8 +208,11 @@ begin
   puts border
 
   if options[:update]
+    if options[:notify_of_change] && (has_change(data, previous_data) || has_change(datab, previous_datab))
+      `growlnotify -n Terminal -a Terminal#{(options[:notify_sticky] ? ' -s' : '')} -m "New Changes" -t "jrank"`
+    end
     sleep(options[:update_interval])
-    if options[:wait_on_change] && (has_change(data, previous_data) || has_change(datab, previous_datab))
+    if (options[:wait_on_change] || options[:notify_of_change]) && (has_change(data, previous_data) || has_change(datab, previous_datab))
       print 'There are changes since the last check. Press ENTER to continue...'
       gets
     end
