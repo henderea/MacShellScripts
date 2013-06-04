@@ -5,109 +5,127 @@ $LOAD_PATH << File.dirname(__FILE__)
 require 'optparse'
 require 'net/http'
 require 'lib/maputil'
+require 'lib/option'
 
-adjust_scores = false
-show_both     = false
+options = {
+    adjust_scores:   false,
+    show_both:       false,
+    update:          false,
+    update_interval: 60,
+}
 
 option_parser = OptionParser.new { |opts|
-  opts.on('-a', '--adjust-scores') { adjust_scores = true }
-  opts.on('-b', '--show-both') { show_both = true }
+  Option::add_option(options, opts, '-a', '--adjust-scores', :adjust_scores)
+  Option::add_option(options, opts, '-b', '--show-both', :show_both)
+  Option::add_option(options, opts, '-u', '--update', :update)
+  Option::add_option_with_param_and_type(options, opts, '-i', '--update-interval INTERVAL', :update_interval, Integer)
 }
 
 option_parser.parse!
 
-datab_only = adjust_scores && !show_both
-datab_any  = adjust_scores || show_both
+datab_only = options[:adjust_scores] && !options[:show_both]
+datab_any  = options[:adjust_scores] || options[:show_both]
 
-source = Net::HTTP.get('ci2.plab.interactions.net', '/cigame/?', 8080)
+Signal.trap('SIGINT') {
+  puts "\n\n"
+  exit 1
+}
 
-match_str  = '>Score</td></tr><tr>'
-match_str2 = '</tr></table>'
-ind        = source.index(match_str)
-ind2       = source.index(match_str2, ind)
+begin
+  source = Net::HTTP.get('ci2.plab.interactions.net', '/cigame/?', 8080)
 
-str = source[(ind+match_str.length)...ind2]
+  match_str  = '>Score</td></tr><tr>'
+  match_str2 = '</tr></table>'
+  ind        = source.index(match_str)
+  ind2       = source.index(match_str2, ind)
 
-regex  = %r{</tr><tr>}
-regex2 = %r{<td><a.*?>(.*?)</a></td><td>.*?</td><td>(.*?)</td>}
+  str = source[(ind+match_str.length)...ind2]
 
-parts = str.split(regex)
+  regex  = %r{</tr><tr>}
+  regex2 = %r{<td><a.*?>(.*?)</a></td><td>.*?</td><td>(.*?)</td>}
 
-data = {}
+  parts = str.split(regex)
 
-parts.each { |v|
-  matcher = regex2.match(v)
-  unless matcher.nil?
-    data[matcher[1]] = matcher[2].to_f.round
+  data = {}
+
+  parts.each { |v|
+    matcher = regex2.match(v)
+    unless matcher.nil?
+      data[matcher[1]] = matcher[2].to_f.round
+    end
+  }
+
+  datab = {}
+
+  avg = data.values.average.round
+  puts "Average: #{avg}" if datab_any
+  data.keys.each { |k|
+    datab[k] = data[k] - avg
+  }
+
+  data = data.sort_by { |k, v| -(v.abs) }
+
+  datab = datab.sort_by { |k, v| -(v.abs) }
+
+  len1 = data.max do |a, b|
+    a[0].to_s.length <=> b[0].to_s.length
   end
-}
 
-datab = {}
+  len2 = data.max do |a, b|
+    a[1].to_s.length <=> b[1].to_s.length
+  end
 
-avg = data.values.average.round
-puts "Average: #{avg}" if datab_any
-data.keys.each { |k|
-  datab[k] = data[k] - avg
-}
+  len1 = len1.to_s.length
+  len2 = len2.to_s.length
 
-data = data.sort_by { |k, v| -(v.abs) }
+  if len1 < 4
+    len1 = 4
+  end
 
-datab = datab.sort_by { |k, v| -(v.abs) }
+  if len2 < 5
+    len2 = 5
+  end
 
-len1 = data.max do |a, b|
-  a[0].to_s.length <=> b[0].to_s.length
-end
+  len3 = datab.max do |a, b|
+    a[1].to_s.length <=> b[1].to_s.length
+  end
 
-len2 = data.max do |a, b|
-  a[1].to_s.length <=> b[1].to_s.length
-end
+  len3 = len3.to_s.length
 
-len1 = len1.to_s.length
-len2 = len2.to_s.length
+  if len3 < 14
+    len3 = 14
+  end
 
-if len1 < 4
-  len1 = 4
-end
+  def make_line(str0, str1, str0b, str2, datab_any, datab_only, data_both, joinstr = '|')
+    vals = [datab_any ? str0b : str0]
+    vals << str2 if datab_any
+    vals << str0 if data_both
+    vals << str1 unless datab_only
+    "#{joinstr}#{vals.join(joinstr)}#{joinstr}"
+  end
 
-if len2 < 5
-  len2 = 5
-end
+  padding = 5
 
-len3 = datab.max do |a, b|
-  a[1].to_s.length <=> b[1].to_s.length
-end
+  border = make_line("#{'-' * (len1+(padding*2))}", "#{'-' * (len2+(padding*2))}", "#{'-' * (len1+(padding*2))}", "#{'-' * (len3+(padding*2))}", datab_any, datab_only, options[:show_both], '+')
 
-len3 = len3.to_s.length
+  user_str   = "#{' ' * padding}#{'User'.center(len1)}#{' ' * padding}"
+  score_str1 = "#{' ' * padding}#{'Score'.center(len2)}#{' ' * padding}"
+  score_str2 = "#{' ' * padding}#{'Adjusted Score'.center(len3)}#{' ' * padding}"
 
-if len3 < 14
-  len3 = 14
-end
+  puts border
+  puts make_line(user_str, score_str1, user_str, score_str2, datab_any, datab_only, options[:show_both])
+  puts border
 
-def make_line(str0, str1, str0b, str2, datab_any, datab_only, data_both, joinstr = '|')
-  vals = [datab_any ? str0b : str0]
-  vals << str2 if datab_any
-  vals << str0 if data_both
-  vals << str1 unless datab_only
-  "#{joinstr}#{vals.join(joinstr)}#{joinstr}"
-end
+  (0...data.count).each { |i|
+    kv1 = data[i]
+    kv2 = datab[i]
+    puts make_line("#{' ' * padding}#{kv1[0].to_s.center(len1)}#{' ' * padding}", "#{' ' * padding}#{kv1[1].to_s.center(len2)}#{' ' * padding}", "#{' ' * padding}#{kv2[0].to_s.center(len1)}#{' ' * padding}", "#{' ' * padding}#{kv2[1].to_s.center(len3)}#{' ' * padding}", datab_any, datab_only, options[:show_both])
+  }
 
-padding = 5
+  puts border
 
-border = make_line("#{'-' * (len1+(padding*2))}", "#{'-' * (len2+(padding*2))}", "#{'-' * (len1+(padding*2))}", "#{'-' * (len3+(padding*2))}", datab_any, datab_only, show_both, '+')
-
-user_str   = "#{' ' * padding}#{'User'.center(len1)}#{' ' * padding}"
-score_str1 = "#{' ' * padding}#{'Score'.center(len2)}#{' ' * padding}"
-score_str2 = "#{' ' * padding}#{'Adjusted Score'.center(len3)}#{' ' * padding}"
-
-puts border
-puts make_line(user_str, score_str1, user_str, score_str2, datab_any, datab_only, show_both)
-puts border
-
-(0...data.count).each { |i|
-  kv1 = data[i]
-  kv2 = datab[i]
-  puts make_line("#{' ' * padding}#{kv1[0].to_s.center(len1)}#{' ' * padding}", "#{' ' * padding}#{kv1[1].to_s.center(len2)}#{' ' * padding}", "#{' ' * padding}#{kv2[0].to_s.center(len1)}#{' ' * padding}", "#{' ' * padding}#{kv2[1].to_s.center(len3)}#{' ' * padding}", datab_any, datab_only, show_both)
-  #puts border
-}
-
-puts border
+  if options[:update]
+    sleep(options[:update_interval])
+    print "\r\e[#{data.count + (datab_any ? 5 : 4)}A\e[J"
+  end
+end while options[:update]
