@@ -5,6 +5,7 @@ $LOAD_PATH << File.dirname(__FILE__)
 require 'optparse'
 require 'net/http'
 require 'yaml'
+require 'curses'
 require 'lib/maputil'
 require 'lib/option'
 require 'lib/format'
@@ -37,15 +38,17 @@ option_parser = OptionParser.new { |opts|
 
 option_parser.parse!
 
-if options[:clear_screen]
+if options[:clear_screen] && !options[:update]
   system('clear')
 end
 
 datab_only = options[:adjust_scores] && !options[:show_both]
 datab_any  = options[:adjust_scores] || options[:show_both]
 
+win = nil
+
 Signal.trap('SIGINT') {
-  puts "\n\n"
+  myputs("\n\n", win)
   exit 1
 }
 
@@ -95,130 +98,173 @@ def has_change(data, prev_data)
   rval
 end
 
+def myputs(text, win)
+  myprint("#{text}\n", win)
+end
+
+def myprint(text, win)
+  if win.nil?
+    print text
+  else
+    if text.include?("\e")
+      pieces = text.scan(/#{"\e"}\[(\d+)m([^#{"\e"}]+?)#{"\e"}\[0m|([^#{"\e"}]+)/)
+      pieces.each { |v|
+        if v[2].nil?
+          win.attron(Curses::color_pair(v[0].to_s == '31' ? Curses::COLOR_RED : Curses::COLOR_GREEN) | Curses::A_NORMAL) {
+            win << v[1]
+          }
+        else
+          win << v[2]
+        end
+      }
+    else
+      win << text
+    end
+    win.refresh
+  end
+end
+
 fname  = File.expand_path('~/jranka.yaml')
 fnameb = File.expand_path('~/jrankb.yaml')
 
+if options[:update]
+  Curses::init_screen
+  win = Curses::stdscr
+  win.clear
+  win.scrollok(true)
+  Curses::start_color
+  Curses::init_pair(Curses::COLOR_RED, Curses::COLOR_RED, -1)
+  Curses::init_pair(Curses::COLOR_GREEN, Curses::COLOR_GREEN, -1)
+end
 begin
-  previous_data  = nil
-  previous_datab = nil
-
-  if options[:track_movement] || options[:show_diff]
-    previous_data = YAML::load_file(fname) if File.exist?(fname)
-    previous_datab = YAML::load_file(fnameb) if File.exist?(fnameb)
-  end
-
-  source = Net::HTTP.get('ci2.plab.interactions.net', '/cigame/?', 8080)
-
-  match_str  = '>Score</td></tr><tr>'
-  match_str2 = '</tr></table>'
-  ind        = source.index(match_str)
-  ind2       = source.index(match_str2, ind)
-
-  str = source[(ind+match_str.length)...ind2]
-
-  regex  = %r{</tr><tr>}
-  regex2 = %r{<td><a.*?>(.*?)</a></td><td>.*?</td><td>(.*?)</td>}
-
-  parts = str.split(regex)
-
-  data = {}
-
-  parts.each { |v|
-    matcher = regex2.match(v)
-    unless matcher.nil?
-      data[matcher[1]] = matcher[2].to_f.round
+  begin
+    unless win.nil?
+      win.setpos(0, 0)
     end
-  }
 
-  datab = {}
+    previous_data  = nil
+    previous_datab = nil
 
-  avg = data.values.average.round
-  puts "Average: #{avg}" if datab_any
-  data.keys.each { |k|
-    datab[k] = data[k] - avg
-  }
+    if options[:track_movement] || options[:show_diff]
+      previous_data = YAML::load_file(fname) if File.exist?(fname)
+      previous_datab = YAML::load_file(fnameb) if File.exist?(fnameb)
+    end
 
-  data = data.sort_by { |k, v| -(v.abs) }
+    source = Net::HTTP.get('ci2.plab.interactions.net', '/cigame/?', 8080)
 
-  datab = datab.sort_by { |k, v| -(v.abs) }
+    match_str  = '>Score</td></tr><tr>'
+    match_str2 = '</tr></table>'
+    ind        = source.index(match_str)
+    ind2       = source.index(match_str2, ind)
 
-  if options[:track_movement] || options[:show_diff]
-    IO::write(fname, data.to_yaml)
-    IO::write(fnameb, datab.to_yaml)
-  end
+    str = source[(ind+match_str.length)...ind2]
 
-  data2 = add_diffs(data, previous_data)
+    regex  = %r{</tr><tr>}
+    regex2 = %r{<td><a.*?>(.*?)</a></td><td>.*?</td><td>(.*?)</td>}
 
-  datab2 = add_diffs(datab, previous_datab)
+    parts = str.split(regex)
 
-  len1 = data.max { |a, b| a[0].to_s.length <=> b[0].to_s.length }
+    data = {}
 
-  len2 = data.max { |a, b| a[1].to_s.length <=> b[1].to_s.length }
-
-  len1 = len1.to_s.length
-  len2 = len2[1].to_s.length
-
-  if len1 < 4
-    len1 = 4
-  end
-
-  len3 = datab.max { |a, b| a[1].to_s.length <=> b[1].to_s.length }
-
-  len3 = len3[1].to_s.length
-
-  len4 = (data2.max { |a, b| a[4] <=> b[4] })[4] + 2
-
-  len5 = (datab2.max { |a, b| a[4] <=> b[4] })[4] + 2
-
-  len2b = len2
-  len3b = len3
-
-  len2b += len4 if options[:show_diff]
-  len3b += len5 if options[:show_diff]
-
-  if len2b < 5
-    len2b = 5
-    len2 = len2b - (options[:show_diff] ? len4 : 0)
-  end
-
-  if len3b < 14
-    len3b = 14
-    len3 = len3b - (options[:show_diff] ? len5 : 0)
-  end
-
-  padding = 5
-
-  border = make_line("#{'-' * (len1+(padding*2)+(options[:track_movement] ? 1 : 0))}", "#{'-' * (len2b+(padding*2))}", "#{'-' * (len1+(padding*2)+(options[:track_movement] ? 1 : 0))}", "#{'-' * (len3b+(padding*2))}", datab_any, datab_only, options[:show_both], '+')
-
-  user_str   = "#{' ' * padding}#{'User'.center(len1)}#{' ' * (padding+(options[:track_movement] ? 1 : 0))}"
-  score_str1 = "#{' ' * padding}#{'Score'.center(len2b)}#{' ' * padding}"
-  score_str2 = "#{' ' * padding}#{'Adjusted Score'.center(len3b)}#{' ' * padding}"
-
-  puts border
-  puts make_line(user_str, score_str1, user_str, score_str2, datab_any, datab_only, options[:show_both])
-  puts border
-
-  (0...data2.count).each { |i|
-    kv1 = data2[i]
-    kv2 = datab2[i]
-    ds1 = options[:show_diff] ? mycenter(kv1[3], len4, kv1[4]) : ''
-    ds2 = options[:show_diff] ? mycenter(kv2[3], len5, kv2[4]) : ''
-    as1 = options[:track_movement] ? kv1[2] : ''
-    as2 = options[:track_movement] ? kv2[2] : ''
-    puts make_line("#{' ' * padding}#{kv1[0].to_s.center(len1)}#{as1}#{' ' * padding}", "#{' ' * padding}#{kv1[1].to_s.center(len2)}#{ds1}#{' ' * padding}", "#{' ' * padding}#{kv2[0].to_s.center(len1)}#{as2}#{' ' * padding}", "#{' ' * padding}#{kv2[1].to_s.center(len3)}#{ds2}#{' ' * padding}", datab_any, datab_only, options[:show_both])
-  }
-
-  puts border
-
-  if options[:update]
-    sleep(options[:update_interval])
-    if (options[:wait_on_change] || options[:notify_of_change]) && (has_change(data, previous_data) || has_change(datab, previous_datab))
-      if options[:notify_of_change]
-        `growlnotify -n Terminal -a Terminal#{(options[:notify_sticky] ? ' -s' : '')} -m "New Changes" -t "jrank"`
+    parts.each { |v|
+      matcher = regex2.match(v)
+      unless matcher.nil?
+        data[matcher[1]] = matcher[2].to_f.round
       end
-      print 'There are changes since the last check. Press ENTER to continue...'
-      gets
+    }
+
+    datab = {}
+
+    avg = data.values.average.round
+    myputs("Average: #{avg}", win) if datab_any
+    data.keys.each { |k|
+      datab[k] = data[k] - avg
+    }
+
+    data = data.sort_by { |k, v| -(v.abs) }
+
+    datab = datab.sort_by { |k, v| -(v.abs) }
+
+    if options[:track_movement] || options[:show_diff]
+      IO::write(fname, data.to_yaml)
+      IO::write(fnameb, datab.to_yaml)
     end
-    print "\r\e[#{data.count + (datab_any ? 5 : 4) + (options[:wait_on_change] ? 1 : 0)}A\e[J"
-  end
-end while options[:update]
+
+    data2 = add_diffs(data, previous_data)
+
+    datab2 = add_diffs(datab, previous_datab)
+
+    len1 = data.max { |a, b| a[0].to_s.length <=> b[0].to_s.length }
+
+    len2 = data.max { |a, b| a[1].to_s.length <=> b[1].to_s.length }
+
+    len1 = len1.to_s.length
+    len2 = len2[1].to_s.length
+
+    if len1 < 4
+      len1 = 4
+    end
+
+    len3 = datab.max { |a, b| a[1].to_s.length <=> b[1].to_s.length }
+
+    len3 = len3[1].to_s.length
+
+    len4 = (data2.max { |a, b| a[4] <=> b[4] })[4] + 2
+
+    len5 = (datab2.max { |a, b| a[4] <=> b[4] })[4] + 2
+
+    len2b = len2
+    len3b = len3
+
+    len2b += len4 if options[:show_diff]
+    len3b += len5 if options[:show_diff]
+
+    if len2b < 5
+      len2b = 5
+      len2  = len2b - (options[:show_diff] ? len4 : 0)
+    end
+
+    if len3b < 14
+      len3b = 14
+      len3  = len3b - (options[:show_diff] ? len5 : 0)
+    end
+
+    padding = 5
+
+    border = make_line("#{'-' * (len1+(padding*2)+(options[:track_movement] ? 1 : 0))}", "#{'-' * (len2b+(padding*2))}", "#{'-' * (len1+(padding*2)+(options[:track_movement] ? 1 : 0))}", "#{'-' * (len3b+(padding*2))}", datab_any, datab_only, options[:show_both], '+')
+
+    user_str   = "#{' ' * padding}#{'User'.center(len1)}#{' ' * (padding+(options[:track_movement] ? 1 : 0))}"
+    score_str1 = "#{' ' * padding}#{'Score'.center(len2b)}#{' ' * padding}"
+    score_str2 = "#{' ' * padding}#{'Adjusted Score'.center(len3b)}#{' ' * padding}"
+
+    myputs(border, win)
+    myputs(make_line(user_str, score_str1, user_str, score_str2, datab_any, datab_only, options[:show_both]), win)
+    myputs(border, win)
+
+    (0...data2.count).each { |i|
+      kv1 = data2[i]
+      kv2 = datab2[i]
+      ds1 = options[:show_diff] ? mycenter(kv1[3], len4, kv1[4]) : ''
+      ds2 = options[:show_diff] ? mycenter(kv2[3], len5, kv2[4]) : ''
+      as1 = options[:track_movement] ? kv1[2] : ''
+      as2 = options[:track_movement] ? kv2[2] : ''
+      myputs(make_line("#{' ' * padding}#{kv1[0].to_s.center(len1)}#{as1}#{' ' * padding}", "#{' ' * padding}#{kv1[1].to_s.center(len2)}#{ds1}#{' ' * padding}", "#{' ' * padding}#{kv2[0].to_s.center(len1)}#{as2}#{' ' * padding}", "#{' ' * padding}#{kv2[1].to_s.center(len3)}#{ds2}#{' ' * padding}", datab_any, datab_only, options[:show_both]), win)
+    }
+
+    myputs(border, win)
+
+    if options[:update]
+      sleep(options[:update_interval])
+      if (options[:wait_on_change] || options[:notify_of_change]) && (has_change(data, previous_data) || has_change(datab, previous_datab))
+        if options[:notify_of_change]
+          `growlnotify -n Terminal -a Terminal#{(options[:notify_sticky] ? ' -s' : '')} -m "New Changes" -t "jrank"`
+        end
+        myprint('There are changes since the last check. Press ENTER to continue...', win)
+        win.getch
+      end
+      win.clear
+    end
+  end while options[:update]
+ensure
+  win.close unless win.nil?
+end
