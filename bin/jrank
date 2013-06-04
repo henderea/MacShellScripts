@@ -4,6 +4,7 @@ $LOAD_PATH << File.dirname(__FILE__)
 
 require 'optparse'
 require 'net/http'
+require 'yaml'
 require 'lib/maputil'
 require 'lib/option'
 
@@ -12,6 +13,7 @@ options = {
     show_both:       false,
     update:          false,
     update_interval: 60,
+    track_movement:  false,
 }
 
 option_parser = OptionParser.new { |opts|
@@ -19,6 +21,7 @@ option_parser = OptionParser.new { |opts|
   Option::add_option(options, opts, '-b', '--show-both', :show_both)
   Option::add_option(options, opts, '-u', '--update', :update)
   Option::add_option_with_param_and_type(options, opts, '-i', '--update-interval INTERVAL', :update_interval, Integer)
+  Option::add_option(options, opts, '-t', '--track-movement', :track_movement)
 }
 
 option_parser.parse!
@@ -31,7 +34,43 @@ Signal.trap('SIGINT') {
   exit 1
 }
 
+def make_line(str0, str1, str0b, str2, datab_any, datab_only, data_both, joinstr = '|')
+  vals = [datab_any ? str0b : str0]
+  vals << str2 if datab_any
+  vals << str0 if data_both
+  vals << str1 unless datab_only
+  "#{joinstr}#{vals.join(joinstr)}#{joinstr}"
+end
+
+def find_index(uname, data)
+  data.nil? ? nil : data.find_index { |i| i[0] == uname }
+end
+
+def add_diffs(data, prev_data)
+  arrow_up   = "\u2191"
+  arrow_down = "\u2193"
+  new_data   = []
+  data.each_with_index { |v, i|
+    i2 = find_index(v[0], prev_data)
+    d  = i2.nil? ? nil : i2 <=> i
+    c  = d.nil? ? '?' : (d == 0 ? '-' : (d < 0 ? arrow_down : arrow_up))
+    new_data << [v[0], v[1], c]
+  }
+  new_data
+end
+
+fname  = File.expand_path('~/jranka.yaml')
+fnameb = File.expand_path('~/jrankb.yaml')
+
 begin
+  previous_data  = nil
+  previous_datab = nil
+
+  if options[:track_movement]
+    previous_data = YAML::load_file(fname) if File.exist?(fname)
+    previous_datab = YAML::load_file(fnameb) if File.exist?(fnameb)
+  end
+
   source = Net::HTTP.get('ci2.plab.interactions.net', '/cigame/?', 8080)
 
   match_str  = '>Score</td></tr><tr>'
@@ -67,6 +106,15 @@ begin
 
   datab = datab.sort_by { |k, v| -(v.abs) }
 
+  if options[:track_movement]
+    IO::write(fname, data.to_yaml)
+    IO::write(fnameb, datab.to_yaml)
+  end
+
+  data2 = add_diffs(data, previous_data)
+
+  datab2 = add_diffs(datab, previous_datab)
+
   len1 = data.max do |a, b|
     a[0].to_s.length <=> b[0].to_s.length
   end
@@ -96,19 +144,11 @@ begin
     len3 = 14
   end
 
-  def make_line(str0, str1, str0b, str2, datab_any, datab_only, data_both, joinstr = '|')
-    vals = [datab_any ? str0b : str0]
-    vals << str2 if datab_any
-    vals << str0 if data_both
-    vals << str1 unless datab_only
-    "#{joinstr}#{vals.join(joinstr)}#{joinstr}"
-  end
-
   padding = 5
 
-  border = make_line("#{'-' * (len1+(padding*2))}", "#{'-' * (len2+(padding*2))}", "#{'-' * (len1+(padding*2))}", "#{'-' * (len3+(padding*2))}", datab_any, datab_only, options[:show_both], '+')
+  border = make_line("#{'-' * (len1+(padding*2)+(options[:track_movement] ? 1 : 0))}", "#{'-' * (len2+(padding*2))}", "#{'-' * (len1+(padding*2)+(options[:track_movement] ? 1 : 0))}", "#{'-' * (len3+(padding*2))}", datab_any, datab_only, options[:show_both], '+')
 
-  user_str   = "#{' ' * padding}#{'User'.center(len1)}#{' ' * padding}"
+  user_str   = "#{' ' * padding}#{'User'.center(len1)}#{' ' * (padding+(options[:track_movement] ? 1 : 0))}"
   score_str1 = "#{' ' * padding}#{'Score'.center(len2)}#{' ' * padding}"
   score_str2 = "#{' ' * padding}#{'Adjusted Score'.center(len3)}#{' ' * padding}"
 
@@ -116,11 +156,19 @@ begin
   puts make_line(user_str, score_str1, user_str, score_str2, datab_any, datab_only, options[:show_both])
   puts border
 
-  (0...data.count).each { |i|
-    kv1 = data[i]
-    kv2 = datab[i]
-    puts make_line("#{' ' * padding}#{kv1[0].to_s.center(len1)}#{' ' * padding}", "#{' ' * padding}#{kv1[1].to_s.center(len2)}#{' ' * padding}", "#{' ' * padding}#{kv2[0].to_s.center(len1)}#{' ' * padding}", "#{' ' * padding}#{kv2[1].to_s.center(len3)}#{' ' * padding}", datab_any, datab_only, options[:show_both])
-  }
+  if options[:track_movement]
+    (0...data2.count).each { |i|
+      kv1 = data2[i]
+      kv2 = datab2[i]
+      puts make_line("#{' ' * padding}#{kv1[0].to_s.center(len1)}#{kv1[2]}#{' ' * padding}", "#{' ' * padding}#{kv1[1].to_s.center(len2)}#{' ' * padding}", "#{' ' * padding}#{kv2[0].to_s.center(len1)}#{kv2[2]}#{' ' * padding}", "#{' ' * padding}#{kv2[1].to_s.center(len3)}#{' ' * padding}", datab_any, datab_only, options[:show_both])
+    }
+  else
+    (0...data.count).each { |i|
+      kv1 = data[i]
+      kv2 = datab[i]
+      puts make_line("#{' ' * padding}#{kv1[0].to_s.center(len1)}#{' ' * padding}", "#{' ' * padding}#{kv1[1].to_s.center(len2)}#{' ' * padding}", "#{' ' * padding}#{kv2[0].to_s.center(len1)}#{' ' * padding}", "#{' ' * padding}#{kv2[1].to_s.center(len3)}#{' ' * padding}", datab_any, datab_only, options[:show_both])
+    }
+  end
 
   puts border
 
