@@ -17,6 +17,7 @@ options = {
     track_movement:  false,
     clear_screen:    false,
     show_diff:       false,
+    wait_on_change:  false,
 }
 
 option_parser = OptionParser.new { |opts|
@@ -27,6 +28,7 @@ option_parser = OptionParser.new { |opts|
   Option::add_option(options, opts, '-t', '--track-movement', :track_movement)
   Option::add_option(options, opts, '-c', '--clear-screen', :clear_screen)
   Option::add_option(options, opts, '-d', '--show-diff', :show_diff)
+  Option::add_option(options, opts, '-w', '--wait-on-change', :wait_on_change)
 }
 
 option_parser.parse!
@@ -78,6 +80,15 @@ def mycenter(text, len, tlen)
   b = ((len - tlen) / 2).floor
   a = len - tlen - b
   "#{' ' * b}#{text}#{' ' * a}"
+end
+
+def has_change(data, prev_data)
+  rval = false
+  data.each_with_index { |v, i|
+    v2 = prev_data[i]
+    rval = true if v2[0] != v[0] || v2[1] != v[1]
+  }
+  rval
 end
 
 fname  = File.expand_path('~/jranka.yaml')
@@ -194,6 +205,10 @@ begin
 
   if options[:update]
     sleep(options[:update_interval])
-    print "\r\e[#{data.count + (datab_any ? 5 : 4)}A\e[J"
+    if options[:wait_on_change] && (has_change(data, previous_data) || has_change(datab, previous_datab))
+      print 'There are changes since the last check. Press ENTER to continue...'
+      gets
+    end
+    print "\r\e[#{data.count + (datab_any ? 5 : 4) + (options[:wait_on_change] ? 1 : 0)}A\e[J"
   end
 end while options[:update]
