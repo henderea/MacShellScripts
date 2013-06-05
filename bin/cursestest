@@ -6,51 +6,126 @@ require 'curses'
 require 'lib/maputil'
 require 'lib/format'
 
-def myputs(text, win)
-  myprint("#{text}\n", win)
+def myputs(text, pad)
+  myprint("#{text}\n", pad)
 end
 
-def myprint(text, win)
-  if win.nil?
+def myprint(text, pad)
+  if pad.nil?
     print text
   else
     if text.include?("\e")
       pieces = text.scan(/#{"\e"}\[(\d+)m([^#{"\e"}]+?)#{"\e"}\[0m|([^#{"\e"}]+)/)
       pieces.each { |v|
         if v[2].nil?
-          win.attron(Curses::color_pair(v[0].to_s == '31' ? Curses::COLOR_RED : Curses::COLOR_GREEN) | Curses::A_NORMAL) {
-            win << v[1]
+          pad.attron(Curses::color_pair(v[0].to_s == '31' ? Curses::COLOR_RED : Curses::COLOR_GREEN) | Curses::A_NORMAL) {
+            pad << v[1]
           }
         else
-          win << v[2]
+          pad << v[2]
         end
       }
     else
-      win << text
+      pad << text
     end
-    win.refresh
+  end
+end
+
+def myprints(headers, bodies, footers, pad, subpad, subpad_size, subpad_start)
+  if pad.nil?
+    headers.each { |v|
+      myputs(v, pad)
+    }
+    bodies.each { |v|
+      myputs(v, pad)
+    }
+    footers.each { |v|
+      myputs(v, pad)
+    }
+    false
+  else
+    pad.setpos(0, 0)
+    myprint(headers.join("\n"), pad)
+    subpad.setpos(0, 0)
+    myprint(bodies.join("\n"), subpad)
+    pad.setpos(subpad_size + subpad_start, 0)
+    extra_lines = subpad_size - bodies.count
+    added_lines = 0
+    footers.each { |v|
+      myprint("#{added_lines == extra_lines ? '' : "\n"}#{v}", added_lines >= extra_lines ? pad : subpad)
+      added_lines += 1
+    }
+    pad.refresh(0, 0, 0, 0, Curses::lines - 1, Curses::cols - 1)
+    if added_lines <= extra_lines + footers.count
+      subpad.refresh(0, 0, 0, 0, subpad_size - 1, Curses::cols - 1)
+    else
+      subpad.refresh(extra_lines.abs - 1, 0, 0, 0, subpad_size - 1, Curses::cols - 1)
+    end
+    added_lines <= extra_lines + footers.count ? 0 : extra_lines.abs - 1
   end
 end
 
 Curses::noecho
 Curses::init_screen
-win = Curses::stdscr
-win.keypad(true)
-win.clear
-win.scrollok(true)
+pad    = Curses::Pad.new(Curses::lines, Curses::cols)
+subpad = pad.subpad(Curses::lines - 5, Curses::cols, 3, 0)
+pad.keypad(true)
+pad.clear
+pad.nodelay = true
+Curses::cbreak
 Curses::start_color
 Curses::use_default_colors
 Curses::init_pair(Curses::COLOR_RED, Curses::COLOR_RED, -1)
 Curses::init_pair(Curses::COLOR_GREEN, Curses::COLOR_GREEN, -1)
 
-win.setpos(0, 0)
+pad.setpos(0, 0)
 
-arrow_up   = Format::colorize("\u2191", :green)
-arrow_down = Format::colorize("\u2193", :red)
+#arrow_up   = Format::colorize("\u2191", :green)
+#arrow_down = Format::colorize("\u2193", :red)
 
-myputs("#{arrow_up}|#{arrow_down}|#{Format::colorize('10', :green)}", win)
+headers = []
+bodies  = []
+footers = []
 
-until win.getch == 10
+w1 = 20
+w2 = 15
+
+border = "+#{'-' * w1}+#{'-' * w2}+"
+header = "|#{'col1'.center(w1)}|#{'col2'.center(w2)}|"
+
+#myprint("#{arrow_up}|#{arrow_down}|#{Format::colorize('10', :green)}", pad, subpad, :header)
+#60.times {
+#  myputs('test', pad, subpad)
+#}
+#myprint('Press ENTER to exit...', pad, subpad, :footer)
+
+headers << border
+headers << header
+headers << border
+(1..60).each { |i|
+  bodies << "|#{"val#{i}a".center(w1)}|#{"val#{i}b".center(w2)}|"
+}
+footers << border
+footers << 'Press ENTER to exit...'
+
+max_l = myprints(headers, bodies, footers, pad, subpad, Curses::lines - 5, 3)
+
+cur_l = max_l
+
+ch = pad.getch
+
+until ch == 10 || ch == Curses::Key::ENTER
+  if ch == Curses::Key::UP
+    cur_l = [0, cur_l - 1].max
+  elsif ch == Curses::Key::DOWN
+    cur_l = [max_l, cur_l + 1].min
+  end
+  if ch == Curses::Key::UP || ch == Curses::Key::DOWN
+    pad.refresh(0, 0, 0, 0, Curses::lines - 1, Curses::cols - 1)
+    subpad.refresh(cur_l, 0, 0, 0, Curses::lines - 6, Curses::cols - 1)
+  end
+  sleep(0.05)
+  ch = pad.getch
 end
 
 Curses::close_screen
