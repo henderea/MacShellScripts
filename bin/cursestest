@@ -32,8 +32,10 @@ def myprint(text, win)
   end
 end
 
+Curses::noecho
 Curses::init_screen
 win = Curses::stdscr
+win.keypad(true)
 win.clear
 win.scrollok(true)
 Curses::start_color
@@ -48,6 +50,7 @@ arrow_down = Format::colorize("\u2193", :red)
 
 myputs("#{arrow_up}|#{arrow_down}|#{Format::colorize('10', :green)}", win)
 
-win.getch
+until win.getch == 10
+end
 
 Curses::close_screen

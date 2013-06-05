@@ -131,8 +131,10 @@ fname  = File.expand_path('~/jranka.yaml')
 fnameb = File.expand_path('~/jrankb.yaml')
 
 if options[:update]
+  Curses::noecho
   Curses::init_screen
   win = Curses::stdscr
+  win.keypad(true)
   win.clear
   win.scrollok(true)
   Curses::start_color
@@ -264,7 +266,8 @@ begin
           `growlnotify -n Terminal -a Terminal#{(options[:notify_sticky] ? ' -s' : '')} -m "New Changes" -t "jrank"`
         end
         myprint('There are changes since the last check. Press ENTER to continue...', win)
-        win.getch
+        until win.getch == 10
+        end
       end
       win.clear
     end
