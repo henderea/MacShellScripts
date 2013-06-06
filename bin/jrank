@@ -140,6 +140,9 @@ def myprints(headers, bodies, footers, padh, padb, padf, subpad_size, subpad_sta
     padh.resize(headers.count, Curses::cols)
     padb.resize(bodies.count, Curses::cols)
     padf.resize(footers.count, Curses::cols)
+    padh.clear
+    padb.clear
+    padf.clear
     padh.setpos(0, 0)
     padb.setpos(0, 0)
     padf.setpos(0, 0)
@@ -303,10 +306,11 @@ begin
       footers << ''
       max_l  = myprints(headers, bodies, footers, padh, padb, padf, Curses::lines - (datab_any ? 6 : 5), (datab_any ? 4 : 3))
       cur_l  = max_l
-      time_s = Date::new
-      time_e = Date::new
+      time_s = Time::now
+      time_e = Time::now
       ch     = padb.getch
       until (time_e - time_s) >= options[:update_interval]
+        time_e = Time::now
         if ch == Curses::Key::UP
           cur_l = [0, cur_l - 1].max
         elsif ch == Curses::Key::DOWN
@@ -325,7 +329,9 @@ begin
           `growlnotify -n Terminal -a Terminal#{(options[:notify_sticky] ? ' -s' : '')} -m "New Changes" -t "jrank"`
         end
         padf << 'There are changes since the last check. Press ENTER to continue...'
-        until padb.getch == 10
+        padf.refresh(0, 0, (datab_any ? 4 : 3) + [Curses::lines - (datab_any ? 6 : 5), bodies.count].min, 0, (datab_any ? 4 : 3) + [Curses::lines - (datab_any ? 6 : 5), bodies.count].min + footers.count, Curses::cols - 1)
+        ch     = padb.getch
+        until ch == 10
           if ch == Curses::Key::UP
             cur_l = [0, cur_l - 1].max
           elsif ch == Curses::Key::DOWN
