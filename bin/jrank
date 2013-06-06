@@ -45,10 +45,8 @@ end
 datab_only = options[:adjust_scores] && !options[:show_both]
 datab_any  = options[:adjust_scores] || options[:show_both]
 
-win = nil
-
 Signal.trap('SIGINT') {
-  myputs("\n\n", win)
+  puts "\n\n"
   exit 1
 }
 
@@ -101,42 +99,84 @@ def has_change(data, prev_data)
   rval
 end
 
-def myputs(text, win)
-  myprint("#{text}\n", win)
+def myputs(text, pad)
+  myprint("#{text}\n", pad)
 end
 
-def myprint(text, win)
-  if win.nil?
+def myprint(text, pad)
+  if pad.nil?
     print text
   else
     if text.include?("\e")
       pieces = text.scan(/#{"\e"}\[(\d+)m([^#{"\e"}]+?)#{"\e"}\[0m|([^#{"\e"}]+)/)
       pieces.each { |v|
         if v[2].nil?
-          win.attron(Curses::color_pair(v[0].to_s == '31' ? Curses::COLOR_RED : Curses::COLOR_GREEN) | Curses::A_NORMAL) {
-            win << v[1]
+          pad.attron(Curses::color_pair(v[0].to_s == '31' ? Curses::COLOR_RED : Curses::COLOR_GREEN) | Curses::A_NORMAL) {
+            pad << v[1]
           }
         else
-          win << v[2]
+          pad << v[2]
         end
       }
     else
-      win << text
+      pad << text
     end
-    win.refresh
+  end
+end
+
+def myprints(headers, bodies, footers, padh, padb, padf, subpad_size, subpad_start)
+  if padh.nil?
+    headers.each { |v|
+      puts v
+    }
+    bodies.each { |v|
+      puts v
+    }
+    footers.each { |v|
+      puts v
+    }
+    false
+  else
+    padh.resize(headers.count, Curses::cols)
+    padb.resize(bodies.count, Curses::cols)
+    padf.resize(footers.count, Curses::cols)
+    padh.setpos(0, 0)
+    padb.setpos(0, 0)
+    padf.setpos(0, 0)
+    myprint(headers.join("\n"), padh)
+    myprint(bodies.join("\n"), padb)
+    line_deficit = [0, bodies.count - subpad_size].max
+    myprint(footers.join("\n"), padf)
+    padh.refresh(0, 0, 0, 0, headers.count - 1, Curses::cols - 1)
+    padb.refresh(line_deficit, 0, subpad_start, 0, subpad_start + subpad_size - 1, Curses::cols - 1)
+    padf.refresh(0, 0, subpad_start + [subpad_size, bodies.count].min, 0, subpad_start + [subpad_size, bodies.count].min + footers.count, Curses::cols - 1)
+    line_deficit
   end
 end
 
 fname  = File.expand_path('~/jranka.yaml')
 fnameb = File.expand_path('~/jrankb.yaml')
 
+padh = nil
+padb = nil
+padf = nil
+
 if options[:update]
   Curses::noecho
   Curses::init_screen
-  win = Curses::stdscr
-  win.keypad(true)
-  win.clear
-  win.scrollok(true)
+  padh = Curses::Pad.new(3, Curses::cols)
+  padb = Curses::Pad.new(Curses::lines - 5, Curses::cols)
+  padf = Curses::Pad.new(2, Curses::cols)
+  padh.keypad(true)
+  padh.clear
+  padh.nodelay = true
+  padb.keypad(true)
+  padb.clear
+  padb.nodelay = true
+  padf.keypad(true)
+  padf.clear
+  padf.nodelay = true
+  Curses::cbreak
   Curses::start_color
   Curses::use_default_colors
   Curses::init_pair(Curses::COLOR_RED, Curses::COLOR_RED, -1)
@@ -144,9 +184,9 @@ if options[:update]
 end
 begin
   begin
-    unless win.nil?
-      win.setpos(0, 0)
-    end
+    headers = []
+    bodies  = []
+    footers = []
 
     previous_data  = nil
     previous_datab = nil
@@ -182,7 +222,7 @@ begin
     datab = {}
 
     avg = data.values.average.round
-    myputs("Average: #{avg}", win) if datab_any
+    headers << "Average: #{avg}" if datab_any
     data.keys.each { |k|
       datab[k] = data[k] - avg
     }
@@ -243,9 +283,9 @@ begin
     score_str1 = "#{' ' * padding}#{'Score'.center(len2b)}#{' ' * padding}"
     score_str2 = "#{' ' * padding}#{'Adjusted Score'.center(len3b)}#{' ' * padding}"
 
-    myputs(border, win)
-    myputs(make_line(user_str, score_str1, user_str, score_str2, datab_any, datab_only, options[:show_both]), win)
-    myputs(border, win)
+    headers << border
+    headers << make_line(user_str, score_str1, user_str, score_str2, datab_any, datab_only, options[:show_both])
+    headers << border
 
     (0...data2.count).each { |i|
       kv1 = data2[i]
@@ -254,24 +294,54 @@ begin
       ds2 = options[:show_diff] ? mycenter(kv2[3], len5, kv2[4]) : ''
       as1 = options[:track_movement] ? kv1[2] : ''
       as2 = options[:track_movement] ? kv2[2] : ''
-      myputs(make_line("#{' ' * padding}#{kv1[0].to_s.center(len1)}#{as1}#{' ' * padding}", "#{' ' * padding}#{kv1[1].to_s.center(len2)}#{ds1}#{' ' * padding}", "#{' ' * padding}#{kv2[0].to_s.center(len1)}#{as2}#{' ' * padding}", "#{' ' * padding}#{kv2[1].to_s.center(len3)}#{ds2}#{' ' * padding}", datab_any, datab_only, options[:show_both]), win)
+      bodies << make_line("#{' ' * padding}#{kv1[0].to_s.center(len1)}#{as1}#{' ' * padding}", "#{' ' * padding}#{kv1[1].to_s.center(len2)}#{ds1}#{' ' * padding}", "#{' ' * padding}#{kv2[0].to_s.center(len1)}#{as2}#{' ' * padding}", "#{' ' * padding}#{kv2[1].to_s.center(len3)}#{ds2}#{' ' * padding}", datab_any, datab_only, options[:show_both])
     }
 
-    myputs(border, win)
+    footers << border
 
     if options[:update]
-      sleep(options[:update_interval])
+      footers << ''
+      max_l  = myprints(headers, bodies, footers, padh, padb, padf, Curses::lines - (datab_any ? 6 : 5), (datab_any ? 4 : 3))
+      cur_l  = max_l
+      time_s = Date::new
+      time_e = Date::new
+      ch     = padb.getch
+      until (time_e - time_s) >= options[:update_interval]
+        if ch == Curses::Key::UP
+          cur_l = [0, cur_l - 1].max
+        elsif ch == Curses::Key::DOWN
+          cur_l = [max_l, cur_l + 1].min
+        end
+        if ch == Curses::Key::UP || ch == Curses::Key::DOWN
+          padh.refresh(0, 0, 0, 0, (datab_any ? 3 : 2), Curses::cols - 1)
+          padb.refresh(cur_l, 0, (datab_any ? 4 : 3), 0, Curses::lines - 3, Curses::cols - 1)
+          padf.refresh(0, 0, (datab_any ? 4 : 3) + [Curses::lines - (datab_any ? 6 : 5), bodies.count].min, 0, (datab_any ? 4 : 3) + [Curses::lines - (datab_any ? 6 : 5), bodies.count].min + footers.count, Curses::cols - 1)
+        end
+        sleep(0.05)
+        ch = padb.getch
+      end
       if (options[:wait_on_change] || options[:notify_of_change]) && (has_change(data, previous_data) || has_change(datab, previous_datab))
         if options[:notify_of_change]
           `growlnotify -n Terminal -a Terminal#{(options[:notify_sticky] ? ' -s' : '')} -m "New Changes" -t "jrank"`
         end
-        myprint('There are changes since the last check. Press ENTER to continue...', win)
-        until win.getch == 10
+        padf << 'There are changes since the last check. Press ENTER to continue...'
+        until padb.getch == 10
+          if ch == Curses::Key::UP
+            cur_l = [0, cur_l - 1].max
+          elsif ch == Curses::Key::DOWN
+            cur_l = [max_l, cur_l + 1].min
+          end
+          if ch == Curses::Key::UP || ch == Curses::Key::DOWN
+            padh.refresh(0, 0, 0, 0, (datab_any ? 3 : 2), Curses::cols - 1)
+            padb.refresh(cur_l, 0, (datab_any ? 4 : 3), 0, Curses::lines - 3, Curses::cols - 1)
+            padf.refresh(0, 0, (datab_any ? 4 : 3) + [Curses::lines - (datab_any ? 6 : 5), bodies.count].min, 0, (datab_any ? 4 : 3) + [Curses::lines - (datab_any ? 6 : 5), bodies.count].min + footers.count, Curses::cols - 1)
+          end
+          sleep(0.05)
+          ch = padb.getch
         end
       end
-      win.clear
     end
   end while options[:update]
 ensure
-  Curses::close_screen unless win.nil?
+  Curses::close_screen unless padh.nil?
 end

@@ -31,54 +31,55 @@ def myprint(text, pad)
   end
 end
 
-def myprints(headers, bodies, footers, pad, subpad, subpad_size, subpad_start)
-  if pad.nil?
+def myprints(headers, bodies, footers, padh, padb, padf, subpad_size, subpad_start)
+  if padh.nil?
     headers.each { |v|
-      myputs(v, pad)
+      puts v
     }
     bodies.each { |v|
-      myputs(v, pad)
+      puts v
     }
     footers.each { |v|
-      myputs(v, pad)
+      puts v
     }
     false
   else
-    pad.setpos(0, 0)
-    myprint(headers.join("\n"), pad)
-    subpad.setpos(0, 0)
-    myprint(bodies.join("\n"), subpad)
-    pad.setpos(subpad_size + subpad_start, 0)
-    extra_lines = subpad_size - bodies.count
-    added_lines = 0
-    footers.each { |v|
-      myprint("#{added_lines == extra_lines ? '' : "\n"}#{v}", added_lines >= extra_lines ? pad : subpad)
-      added_lines += 1
-    }
-    pad.refresh(0, 0, 0, 0, Curses::lines - 1, Curses::cols - 1)
-    if added_lines <= extra_lines + footers.count
-      subpad.refresh(0, 0, 0, 0, subpad_size - 1, Curses::cols - 1)
-    else
-      subpad.refresh(extra_lines.abs - 1, 0, 0, 0, subpad_size - 1, Curses::cols - 1)
-    end
-    added_lines <= extra_lines + footers.count ? 0 : extra_lines.abs - 1
+    padh.resize(headers.count, Curses::cols)
+    padb.resize(bodies.count, Curses::cols)
+    padf.resize(footers.count, Curses::cols)
+    padh.setpos(0, 0)
+    padb.setpos(0, 0)
+    padf.setpos(0, 0)
+    myprint(headers.join("\n"), padh)
+    myprint(bodies.join("\n"), padb)
+    line_deficit = [0, bodies.count - subpad_size].max
+    myprint(footers.join("\n"), padf)
+    padh.refresh(0, 0, 0, 0, headers.count - 1, Curses::cols - 1)
+    padb.refresh(line_deficit, 0, subpad_start, 0, subpad_start + subpad_size - 1, Curses::cols - 1)
+    padf.refresh(0, 0, subpad_start + [subpad_size, bodies.count].min, 0, subpad_start + [subpad_size, bodies.count].min + footers.count, Curses::cols - 1)
+    line_deficit
   end
 end
 
 Curses::noecho
 Curses::init_screen
-pad    = Curses::Pad.new(Curses::lines, Curses::cols)
-subpad = pad.subpad(Curses::lines - 5, Curses::cols, 3, 0)
-pad.keypad(true)
-pad.clear
-pad.nodelay = true
+padh = Curses::Pad.new(3, Curses::cols)
+padb = Curses::Pad.new(Curses::lines - 5, Curses::cols)
+padf = Curses::Pad.new(2, Curses::cols)
+padh.keypad(true)
+padh.clear
+padh.nodelay = true
+padb.keypad(true)
+padb.clear
+padb.nodelay = true
+padf.keypad(true)
+padf.clear
+padf.nodelay = true
 Curses::cbreak
 Curses::start_color
 Curses::use_default_colors
 Curses::init_pair(Curses::COLOR_RED, Curses::COLOR_RED, -1)
 Curses::init_pair(Curses::COLOR_GREEN, Curses::COLOR_GREEN, -1)
-
-pad.setpos(0, 0)
 
 #arrow_up   = Format::colorize("\u2191", :green)
 #arrow_down = Format::colorize("\u2193", :red)
@@ -93,12 +94,6 @@ w2 = 15
 border = "+#{'-' * w1}+#{'-' * w2}+"
 header = "|#{'col1'.center(w1)}|#{'col2'.center(w2)}|"
 
-#myprint("#{arrow_up}|#{arrow_down}|#{Format::colorize('10', :green)}", pad, subpad, :header)
-#60.times {
-#  myputs('test', pad, subpad)
-#}
-#myprint('Press ENTER to exit...', pad, subpad, :footer)
-
 headers << border
 headers << header
 headers << border
@@ -108,11 +103,11 @@ headers << border
 footers << border
 footers << 'Press ENTER to exit...'
 
-max_l = myprints(headers, bodies, footers, pad, subpad, Curses::lines - 5, 3)
+max_l = myprints(headers, bodies, footers, padh, padb, padf, Curses::lines - 5, 3)
 
 cur_l = max_l
 
-ch = pad.getch
+ch = padb.getch
 
 until ch == 10 || ch == Curses::Key::ENTER
   if ch == Curses::Key::UP
@@ -121,11 +116,12 @@ until ch == 10 || ch == Curses::Key::ENTER
     cur_l = [max_l, cur_l + 1].min
   end
   if ch == Curses::Key::UP || ch == Curses::Key::DOWN
-    pad.refresh(0, 0, 0, 0, Curses::lines - 1, Curses::cols - 1)
-    subpad.refresh(cur_l, 0, 0, 0, Curses::lines - 6, Curses::cols - 1)
+    padh.refresh(0, 0, 0, 0, 2, Curses::cols - 1)
+    padb.refresh(cur_l, 0, 3, 0, Curses::lines - 3, Curses::cols - 1)
+    padf.refresh(0, 0, 3 + [Curses::lines - 5, bodies.count].min, 0, 3 + [Curses::lines - 5, bodies.count].min + footers.count, Curses::cols - 1)
   end
   sleep(0.05)
-  ch = pad.getch
+  ch = padb.getch
 end
 
 Curses::close_screen
