@@ -54,6 +54,26 @@ module Format
     str
   end
 
+  def self::parse_format(str)
+    parts     = str.split(';')
+    bold      = false
+    underline = false
+    fgcolor   = :none
+    bgcolor   = :none
+    parts.each { |v|
+      if v == FORMAT_TO_CODE[:bold]
+        bold = true
+      elsif v == FORMAT_TO_CODE[:underline]
+        underline = true
+      elsif v[0] == '3'
+        fgcolor = FG_COLOR_TO_CODE.invert[v]
+      elsif v[0] == '4'
+        bgcolor = BG_COLOR_TO_CODE.invert[v]
+      end
+      return bold, underline, fgcolor, bgcolor
+    }
+  end
+
   def self::colorize(text, fgcolor = nil, bgcolor = nil)
     self::format(text, self::build_string(false, false, fgcolor, bgcolor))
   end

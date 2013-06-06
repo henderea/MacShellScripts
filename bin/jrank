@@ -5,10 +5,10 @@ $LOAD_PATH << File.dirname(__FILE__)
 require 'optparse'
 require 'net/http'
 require 'yaml'
-require 'curses'
 require 'lib/maputil'
 require 'lib/option'
 require 'lib/format'
+require 'lib/mycurses'
 
 options = {
     adjust_scores:    false,
@@ -99,135 +99,14 @@ def has_change(data, prev_data)
   rval
 end
 
-def myputs(text, pad)
-  myprint("#{text}\n", pad)
-end
-
-def myprint(text, pad)
-  if pad.nil?
-    print text
-  else
-    if text.include?("\e")
-      pieces = text.scan(/#{"\e"}\[(\d+)m([^#{"\e"}]+?)#{"\e"}\[0m|([^#{"\e"}]+)/)
-      pieces.each { |v|
-        if v[2].nil?
-          pad.attron(Curses::color_pair(v[0].to_s == '31' ? Curses::COLOR_RED : Curses::COLOR_GREEN) | Curses::A_NORMAL) {
-            pad << v[1]
-          }
-        else
-          pad << v[2]
-        end
-      }
-    else
-      pad << text
-    end
-  end
-end
-
-def get_max_l(bodies, subpad_size)
-  line_deficit = [0, bodies.count - subpad_size].max
-end
-
-def myprints(headers, bodies, footers, padh, padb, padf, subpad_size, subpad_start)
-  if padh.nil?
-    headers.each { |v|
-      puts v
-    }
-    bodies.each { |v|
-      puts v
-    }
-    footers.each { |v|
-      puts v
-    }
-    false
-  else
-    padh.resize(headers.count, Curses::cols)
-    padb.resize(bodies.count, Curses::cols)
-    padf.resize(footers.count, Curses::cols)
-    padh.clear
-    padb.clear
-    padf.clear
-    padh.setpos(0, 0)
-    padb.setpos(0, 0)
-    padf.setpos(0, 0)
-    myprint(headers.join("\n"), padh)
-    myprint(bodies.join("\n"), padb)
-    line_deficit = get_max_l(bodies, subpad_size)
-    myprint(footers.join("\n"), padf)
-    padh_refresh(padh, subpad_start)
-    padb_refresh(line_deficit, padb, subpad_size, subpad_start)
-    padf_refresh(bodies, footers, padf, subpad_size, subpad_start)
-    line_deficit
-  end
-end
-
 fname  = File.expand_path('~/jranka.yaml')
 fnameb = File.expand_path('~/jrankb.yaml')
 
-padh = nil
-padb = nil
-padf = nil
-
-if options[:update]
-  Curses::noecho
-  Curses::init_screen
-  padh = Curses::Pad.new(3, Curses::cols)
-  padb = Curses::Pad.new(Curses::lines - 5, Curses::cols)
-  padf = Curses::Pad.new(2, Curses::cols)
-  padh.keypad(true)
-  padh.clear
-  padh.nodelay = true
-  padb.keypad(true)
-  padb.clear
-  padb.nodelay = true
-  padf.keypad(true)
-  padf.clear
-  padf.nodelay = true
-  Curses::cbreak
-  Curses::start_color
-  Curses::use_default_colors
-  Curses::init_pair(Curses::COLOR_RED, Curses::COLOR_RED, -1)
-  Curses::init_pair(Curses::COLOR_GREEN, Curses::COLOR_GREEN, -1)
-end
-
-def padh_refresh(padh, subpad_start)
-  padh.refresh(0, 0, 0, 0, subpad_start - 1, Curses::cols - 1)
-end
-
-def padb_refresh(cur_l, padb, subpad_size, subpad_start)
-  padb.refresh(cur_l, 0, subpad_start, 0, subpad_start + subpad_size - 1, Curses::cols - 1)
-end
-
-def padf_refresh(bodies, footers, padf, subpad_size, subpad_start)
-  padf.refresh(0, 0, subpad_start + [subpad_size, bodies.count].min, 0, subpad_start + [subpad_size, bodies.count].min + footers.count, Curses::cols - 1)
-end
-
-def update_scroll(bodies, ch, cur_l, footers, max_l, padb, padf, padh, subpad_size, subpad_start, force_refresh = false)
-  if ch == Curses::Key::UP
-    cur_l = [0, cur_l - 1].max
-  elsif ch == Curses::Key::DOWN
-    cur_l = [max_l, cur_l + 1].min
-  end
-  cur_l = [cur_l, max_l].min
-  if ch == Curses::Key::UP || ch == Curses::Key::DOWN || force_refresh
-    Curses::refresh
-    padh_refresh(padh, subpad_start)
-    padb_refresh(cur_l, padb, subpad_size, subpad_start)
-    padf_refresh(bodies, footers, padf, subpad_size, subpad_start)
-  end
-  cur_l
-end
-
-def get_subpad_size(datab_any)
-  Curses::refresh
-  Curses::lines - (datab_any ? 6 : 5)
-end
+mycurses = MyCurses.new(options[:update], (datab_any ? 4 : 3), 2)
 
 begin
   begin
-    headers = []
-    bodies  = []
-    footers = []
+    mycurses.clear
 
     previous_data  = nil
     previous_datab = nil
@@ -263,7 +142,7 @@ begin
     datab = {}
 
     avg = data.values.average.round
-    headers << "Average: #{avg}" if datab_any
+    mycurses.headers << "Average: #{avg}" if datab_any
     data.keys.each { |k|
       datab[k] = data[k] - avg
     }
@@ -324,9 +203,9 @@ begin
     score_str1 = "#{' ' * padding}#{'Score'.center(len2b)}#{' ' * padding}"
     score_str2 = "#{' ' * padding}#{'Adjusted Score'.center(len3b)}#{' ' * padding}"
 
-    headers << border
-    headers << make_line(user_str, score_str1, user_str, score_str2, datab_any, datab_only, options[:show_both])
-    headers << border
+    mycurses.headers << border
+    mycurses.headers << make_line(user_str, score_str1, user_str, score_str2, datab_any, datab_only, options[:show_both])
+    mycurses.headers << border
 
     (0...data2.count).each { |i|
       kv1 = data2[i]
@@ -335,47 +214,33 @@ begin
       ds2 = options[:show_diff] ? mycenter(kv2[3], len5, kv2[4]) : ''
       as1 = options[:track_movement] ? kv1[2] : ''
       as2 = options[:track_movement] ? kv2[2] : ''
-      bodies << make_line("#{' ' * padding}#{kv1[0].to_s.center(len1)}#{as1}#{' ' * padding}", "#{' ' * padding}#{kv1[1].to_s.center(len2)}#{ds1}#{' ' * padding}", "#{' ' * padding}#{kv2[0].to_s.center(len1)}#{as2}#{' ' * padding}", "#{' ' * padding}#{kv2[1].to_s.center(len3)}#{ds2}#{' ' * padding}", datab_any, datab_only, options[:show_both])
+      mycurses.bodies << make_line("#{' ' * padding}#{kv1[0].to_s.center(len1)}#{as1}#{' ' * padding}", "#{' ' * padding}#{kv1[1].to_s.center(len2)}#{ds1}#{' ' * padding}", "#{' ' * padding}#{kv2[0].to_s.center(len1)}#{as2}#{' ' * padding}", "#{' ' * padding}#{kv2[1].to_s.center(len3)}#{ds2}#{' ' * padding}", datab_any, datab_only, options[:show_both])
     }
 
-    footers << border
+    mycurses.footers << border
+    mycurses.footers << '' if options[:update]
+    mycurses.myprints
 
     if options[:update]
-      footers << ''
-      subpad_size  = get_subpad_size(datab_any)
-      subpad_start = (datab_any ? 4 : 3)
-      max_l        = myprints(headers, bodies, footers, padh, padb, padf, subpad_size, subpad_start)
-      cur_l        = max_l
-      time_s       = Time::now
-      time_e       = Time::now
-      ch           = padb.getch
+      time_s = Time::now
+      time_e = Time::now
+      mycurses.read_ch
       until (time_e - time_s) >= options[:update_interval]
-        time_e          = Time::now
-        old_subpad_size = subpad_size
-        subpad_size     = get_subpad_size(datab_any)
-        max_l           = get_max_l(bodies, subpad_size)
-        cur_l           = update_scroll(bodies, ch, cur_l, footers, max_l, padb, padf, padh, subpad_size, subpad_start, subpad_size != old_subpad_size)
-        sleep(0.05)
-        ch = padb.getch
+        time_e = Time::now
+        mycurses.scroll_iteration
       end
       if (options[:wait_on_change] || options[:notify_of_change]) && (has_change(data, previous_data) || has_change(datab, previous_datab))
         if options[:notify_of_change]
           `growlnotify -n Terminal -a Terminal#{(options[:notify_sticky] ? ' -s' : '')} -m "New Changes" -t "jrank"`
         end
-        padf << 'There are changes since the last check. Press ENTER to continue...'
-        padf.refresh(0, 0, subpad_start + [subpad_size, bodies.count].min, 0, subpad_start + [subpad_size, bodies.count].min + footers.count, Curses::cols - 1)
-        ch = padb.getch
-        until ch == 10
-          old_subpad_size = subpad_size
-          subpad_size     = get_subpad_size(datab_any)
-          max_l           = get_max_l(bodies, subpad_size)
-          cur_l           = update_scroll(bodies, ch, cur_l, footers, max_l, padb, padf, padh, subpad_size, subpad_start, subpad_size != old_subpad_size)
-          sleep(0.05)
-          ch = padb.getch
+        mycurses.footer_live_append('There are changes since the last check. Press ENTER to continue...')
+        mycurses.read_ch
+        until mycurses.ch == 10
+          mycurses.scroll_iteration
         end
       end
     end
   end while options[:update]
 ensure
-  Curses::close_screen unless padh.nil?
+  mycurses.dispose
 end
