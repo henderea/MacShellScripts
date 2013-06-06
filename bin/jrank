@@ -148,7 +148,6 @@ begin
     }
 
     data = data.sort_by { |k, v| -(v.abs) }
-
     datab = datab.sort_by { |k, v| -(v.abs) }
 
     if options[:track_movement] || options[:show_diff]
@@ -157,14 +156,11 @@ begin
     end
 
     data2 = add_diffs(data, previous_data)
-
     datab2 = add_diffs(datab, previous_datab)
 
     len1 = data.max { |a, b| a[0].to_s.length <=> b[0].to_s.length }
-
     len2 = data.max { |a, b| a[1].to_s.length <=> b[1].to_s.length }
-
-    len1 = len1.to_s.length
+    len1 = len1[0].to_s.length
     len2 = len2[1].to_s.length
 
     if len1 < 4
@@ -172,11 +168,9 @@ begin
     end
 
     len3 = datab.max { |a, b| a[1].to_s.length <=> b[1].to_s.length }
-
     len3 = len3[1].to_s.length
 
     len4 = (data2.max { |a, b| a[4] <=> b[4] })[4] + 2
-
     len5 = (datab2.max { |a, b| a[4] <=> b[4] })[4] + 2
 
     len2b = len2
