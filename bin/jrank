@@ -124,6 +124,10 @@ def myprint(text, pad)
   end
 end
 
+def get_max_l(bodies, subpad_size)
+  line_deficit = [0, bodies.count - subpad_size].max
+end
+
 def myprints(headers, bodies, footers, padh, padb, padf, subpad_size, subpad_start)
   if padh.nil?
     headers.each { |v|
@@ -148,11 +152,11 @@ def myprints(headers, bodies, footers, padh, padb, padf, subpad_size, subpad_sta
     padf.setpos(0, 0)
     myprint(headers.join("\n"), padh)
     myprint(bodies.join("\n"), padb)
-    line_deficit = [0, bodies.count - subpad_size].max
+    line_deficit = get_max_l(bodies, subpad_size)
     myprint(footers.join("\n"), padf)
-    padh.refresh(0, 0, 0, 0, headers.count - 1, Curses::cols - 1)
-    padb.refresh(line_deficit, 0, subpad_start, 0, subpad_start + subpad_size - 1, Curses::cols - 1)
-    padf.refresh(0, 0, subpad_start + [subpad_size, bodies.count].min, 0, subpad_start + [subpad_size, bodies.count].min + footers.count, Curses::cols - 1)
+    padh_refresh(padh, subpad_start)
+    padb_refresh(line_deficit, padb, subpad_size, subpad_start)
+    padf_refresh(bodies, footers, padf, subpad_size, subpad_start)
     line_deficit
   end
 end
@@ -185,6 +189,40 @@ if options[:update]
   Curses::init_pair(Curses::COLOR_RED, Curses::COLOR_RED, -1)
   Curses::init_pair(Curses::COLOR_GREEN, Curses::COLOR_GREEN, -1)
 end
+
+def padh_refresh(padh, subpad_start)
+  padh.refresh(0, 0, 0, 0, subpad_start - 1, Curses::cols - 1)
+end
+
+def padb_refresh(cur_l, padb, subpad_size, subpad_start)
+  padb.refresh(cur_l, 0, subpad_start, 0, subpad_start + subpad_size - 1, Curses::cols - 1)
+end
+
+def padf_refresh(bodies, footers, padf, subpad_size, subpad_start)
+  padf.refresh(0, 0, subpad_start + [subpad_size, bodies.count].min, 0, subpad_start + [subpad_size, bodies.count].min + footers.count, Curses::cols - 1)
+end
+
+def update_scroll(bodies, ch, cur_l, footers, max_l, padb, padf, padh, subpad_size, subpad_start, force_refresh = false)
+  if ch == Curses::Key::UP
+    cur_l = [0, cur_l - 1].max
+  elsif ch == Curses::Key::DOWN
+    cur_l = [max_l, cur_l + 1].min
+  end
+  cur_l = [cur_l, max_l].min
+  if ch == Curses::Key::UP || ch == Curses::Key::DOWN || force_refresh
+    Curses::refresh
+    padh_refresh(padh, subpad_start)
+    padb_refresh(cur_l, padb, subpad_size, subpad_start)
+    padf_refresh(bodies, footers, padf, subpad_size, subpad_start)
+  end
+  cur_l
+end
+
+def get_subpad_size(datab_any)
+  Curses::refresh
+  Curses::lines - (datab_any ? 6 : 5)
+end
+
 begin
   begin
     headers = []
@@ -304,23 +342,19 @@ begin
 
     if options[:update]
       footers << ''
-      max_l  = myprints(headers, bodies, footers, padh, padb, padf, Curses::lines - (datab_any ? 6 : 5), (datab_any ? 4 : 3))
-      cur_l  = max_l
-      time_s = Time::now
-      time_e = Time::now
-      ch     = padb.getch
+      subpad_size  = get_subpad_size(datab_any)
+      subpad_start = (datab_any ? 4 : 3)
+      max_l        = myprints(headers, bodies, footers, padh, padb, padf, subpad_size, subpad_start)
+      cur_l        = max_l
+      time_s       = Time::now
+      time_e       = Time::now
+      ch           = padb.getch
       until (time_e - time_s) >= options[:update_interval]
-        time_e = Time::now
-        if ch == Curses::Key::UP
-          cur_l = [0, cur_l - 1].max
-        elsif ch == Curses::Key::DOWN
-          cur_l = [max_l, cur_l + 1].min
-        end
-        if ch == Curses::Key::UP || ch == Curses::Key::DOWN
-          padh.refresh(0, 0, 0, 0, (datab_any ? 3 : 2), Curses::cols - 1)
-          padb.refresh(cur_l, 0, (datab_any ? 4 : 3), 0, Curses::lines - 3, Curses::cols - 1)
-          padf.refresh(0, 0, (datab_any ? 4 : 3) + [Curses::lines - (datab_any ? 6 : 5), bodies.count].min, 0, (datab_any ? 4 : 3) + [Curses::lines - (datab_any ? 6 : 5), bodies.count].min + footers.count, Curses::cols - 1)
-        end
+        time_e          = Time::now
+        old_subpad_size = subpad_size
+        subpad_size     = get_subpad_size(datab_any)
+        max_l           = get_max_l(bodies, subpad_size)
+        cur_l           = update_scroll(bodies, ch, cur_l, footers, max_l, padb, padf, padh, subpad_size, subpad_start, subpad_size != old_subpad_size)
         sleep(0.05)
         ch = padb.getch
       end
@@ -329,19 +363,13 @@ begin
           `growlnotify -n Terminal -a Terminal#{(options[:notify_sticky] ? ' -s' : '')} -m "New Changes" -t "jrank"`
         end
         padf << 'There are changes since the last check. Press ENTER to continue...'
-        padf.refresh(0, 0, (datab_any ? 4 : 3) + [Curses::lines - (datab_any ? 6 : 5), bodies.count].min, 0, (datab_any ? 4 : 3) + [Curses::lines - (datab_any ? 6 : 5), bodies.count].min + footers.count, Curses::cols - 1)
-        ch     = padb.getch
+        padf.refresh(0, 0, subpad_start + [subpad_size, bodies.count].min, 0, subpad_start + [subpad_size, bodies.count].min + footers.count, Curses::cols - 1)
+        ch = padb.getch
         until ch == 10
-          if ch == Curses::Key::UP
-            cur_l = [0, cur_l - 1].max
-          elsif ch == Curses::Key::DOWN
-            cur_l = [max_l, cur_l + 1].min
-          end
-          if ch == Curses::Key::UP || ch == Curses::Key::DOWN
-            padh.refresh(0, 0, 0, 0, (datab_any ? 3 : 2), Curses::cols - 1)
-            padb.refresh(cur_l, 0, (datab_any ? 4 : 3), 0, Curses::lines - 3, Curses::cols - 1)
-            padf.refresh(0, 0, (datab_any ? 4 : 3) + [Curses::lines - (datab_any ? 6 : 5), bodies.count].min, 0, (datab_any ? 4 : 3) + [Curses::lines - (datab_any ? 6 : 5), bodies.count].min + footers.count, Curses::cols - 1)
-          end
+          old_subpad_size = subpad_size
+          subpad_size     = get_subpad_size(datab_any)
+          max_l           = get_max_l(bodies, subpad_size)
+          cur_l           = update_scroll(bodies, ch, cur_l, footers, max_l, padb, padf, padh, subpad_size, subpad_start, subpad_size != old_subpad_size)
           sleep(0.05)
           ch = padb.getch
         end
