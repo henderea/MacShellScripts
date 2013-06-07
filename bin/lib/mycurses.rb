@@ -147,14 +147,16 @@ class MyCurses
   end
 
   def handle_color(fgcolor, bgcolor)
-    if (fgcolor.nil? || fgcolor == :none) || (bgcolor.nil? || bgcolor == :none)
+    if (fgcolor.nil? || fgcolor == :none) && (bgcolor.nil? || bgcolor == :none)
       return 0
     end
     ind = @colors.find_index { |v| v[0] == (fgcolor || :none) && v[1] == (bgcolor || :none) }
     if ind.nil?
-      Curses::init_pair(@colors.count, COLOR_TO_CURSES[fgcolor || :none], COLOR_TO_CURSES[bgcolor || :none])
-      ind = @colors.count
+      Curses::init_pair(@colors.count + 1, COLOR_TO_CURSES[fgcolor || :none], COLOR_TO_CURSES[bgcolor || :none])
+      ind = @colors.count + 1
       @colors << [fgcolor || :none, bgcolor || :none]
+    else
+      ind += 1
     end
     Curses::color_pair(ind)
   end
