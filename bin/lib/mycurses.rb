@@ -166,7 +166,7 @@ class MyCurses
   def myprint(text, pad)
     if @use_curses
       if text.include?("\e")
-        pieces = text.scan(/#{"\e"}\[.+?m([^#{"\e"}]+?)#{"\e"}\[0m|([^#{"\e"}]+)/)
+        pieces = text.scan(/#{"\e"}\[(.+?)m([^#{"\e"}]+?)#{"\e"}\[0m|([^#{"\e"}]+)/)
         pieces.each { |v|
           if v[2].nil?
             pad.attron(get_format(v[0])) {
