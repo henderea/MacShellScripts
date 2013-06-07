@@ -98,6 +98,13 @@ class MyCurses
     @ch = @padb.getch
   end
 
+  def clear_ch
+    read_ch
+    while @ch == 10 || @ch == Curses::Key::ENTER || @ch == Curses::Key::UP || @ch == Curses::Key::DOWN
+      read_ch
+    end
+  end
+
   def scroll_iteration
     old_subpad_size = @subpad_size
     update_subpad_size

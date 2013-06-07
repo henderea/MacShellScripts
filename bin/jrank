@@ -104,6 +104,9 @@ fnameb = File.expand_path('~/jrankb.yaml')
 
 mycurses = MyCurses.new(options[:update], (datab_any ? 4 : 3), 2)
 
+net              = Net::HTTP.new('ci2.plab.interactions.net', 8080)
+net.read_timeout = 5
+
 begin
   begin
     mycurses.clear
@@ -116,7 +119,20 @@ begin
       previous_datab = YAML::load_file(fnameb) if File.exist?(fnameb)
     end
 
-    source = Net::HTTP.get('ci2.plab.interactions.net', '/cigame/?', 8080)
+    source = nil
+
+    while source.nil?
+      begin
+        response = net.get('/cigame/?')
+        if response.kind_of?(Net::HTTPSuccess)
+          source = response.body
+        else
+          source = nil
+        end
+      rescue
+        # ignored
+      end
+    end
 
     match_str  = '>Score</td></tr><tr>'
     match_str2 = '</tr></table>'
@@ -147,7 +163,7 @@ begin
       datab[k] = data[k] - avg
     }
 
-    data = data.sort_by { |k, v| -(v.abs) }
+    data  = data.sort_by { |k, v| -(v.abs) }
     datab = datab.sort_by { |k, v| -(v.abs) }
 
     if options[:track_movement] || options[:show_diff]
@@ -155,7 +171,7 @@ begin
       IO::write(fnameb, datab.to_yaml)
     end
 
-    data2 = add_diffs(data, previous_data)
+    data2  = add_diffs(data, previous_data)
     datab2 = add_diffs(datab, previous_datab)
 
     len1 = data.max { |a, b| a[0].to_s.length <=> b[0].to_s.length }
@@ -218,7 +234,7 @@ begin
     if options[:update]
       time_s = Time::now
       time_e = Time::now
-      mycurses.read_ch
+      mycurses.clear_ch
       until (time_e - time_s) >= options[:update_interval] || mycurses.ch == 10
         time_e = Time::now
         mycurses.scroll_iteration
@@ -228,7 +244,7 @@ begin
           `growlnotify -n Terminal -a Terminal#{(options[:notify_sticky] ? ' -s' : '')} -m "New Changes" -t "jrank"`
         end
         mycurses.footer_live_append('There are changes since the last check. Press ENTER to continue...')
-        mycurses.read_ch
+        mycurses.clear_ch
         until mycurses.ch == 10
           mycurses.scroll_iteration
         end
