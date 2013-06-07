@@ -219,11 +219,11 @@ begin
       time_s = Time::now
       time_e = Time::now
       mycurses.read_ch
-      until (time_e - time_s) >= options[:update_interval]
+      until (time_e - time_s) >= options[:update_interval] || mycurses.ch == 10
         time_e = Time::now
         mycurses.scroll_iteration
       end
-      if (options[:wait_on_change] || options[:notify_of_change]) && (has_change(data, previous_data) || has_change(datab, previous_datab))
+      if mycurses.ch != 10 && (options[:wait_on_change] || options[:notify_of_change]) && (has_change(data, previous_data) || has_change(datab, previous_datab))
         if options[:notify_of_change]
           `growlnotify -n Terminal -a Terminal#{(options[:notify_sticky] ? ' -s' : '')} -m "New Changes" -t "jrank"`
         end
