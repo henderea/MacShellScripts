@@ -70,8 +70,8 @@ module Format
       elsif v[0] == '4'
         bgcolor = BG_COLOR_TO_CODE.invert[v]
       end
-      return bold, underline, fgcolor, bgcolor
     }
+    return bold, underline, fgcolor, bgcolor
   end
 
   def self::colorize(text, fgcolor = nil, bgcolor = nil)

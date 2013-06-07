@@ -5,88 +5,18 @@ $LOAD_PATH << File.dirname(__FILE__)
 require 'curses'
 require 'lib/maputil'
 require 'lib/format'
-
-def myputs(text, pad)
-  myprint("#{text}\n", pad)
-end
-
-def myprint(text, pad)
-  if pad.nil?
-    print text
-  else
-    if text.include?("\e")
-      pieces = text.scan(/#{"\e"}\[(\d+)m([^#{"\e"}]+?)#{"\e"}\[0m|([^#{"\e"}]+)/)
-      pieces.each { |v|
-        if v[2].nil?
-          pad.attron(Curses::color_pair(v[0].to_s == '31' ? Curses::COLOR_RED : Curses::COLOR_GREEN) | Curses::A_NORMAL) {
-            pad << v[1]
-          }
-        else
-          pad << v[2]
-        end
-      }
-    else
-      pad << text
-    end
-  end
-end
-
-def myprints(headers, bodies, footers, padh, padb, padf, subpad_size, subpad_start)
-  if padh.nil?
-    headers.each { |v|
-      puts v
-    }
-    bodies.each { |v|
-      puts v
-    }
-    footers.each { |v|
-      puts v
-    }
-    false
-  else
-    padh.resize(headers.count, Curses::cols)
-    padb.resize(bodies.count, Curses::cols)
-    padf.resize(footers.count, Curses::cols)
-    padh.setpos(0, 0)
-    padb.setpos(0, 0)
-    padf.setpos(0, 0)
-    myprint(headers.join("\n"), padh)
-    myprint(bodies.join("\n"), padb)
-    line_deficit = [0, bodies.count - subpad_size].max
-    myprint(footers.join("\n"), padf)
-    padh.refresh(0, 0, 0, 0, headers.count - 1, Curses::cols - 1)
-    padb.refresh(line_deficit, 0, subpad_start, 0, subpad_start + subpad_size - 1, Curses::cols - 1)
-    padf.refresh(0, 0, subpad_start + [subpad_size, bodies.count].min, 0, subpad_start + [subpad_size, bodies.count].min + footers.count, Curses::cols - 1)
-    line_deficit
-  end
-end
-
-Curses::noecho
-Curses::init_screen
-padh = Curses::Pad.new(3, Curses::cols)
-padb = Curses::Pad.new(Curses::lines - 5, Curses::cols)
-padf = Curses::Pad.new(2, Curses::cols)
-padh.keypad(true)
-padh.clear
-padh.nodelay = true
-padb.keypad(true)
-padb.clear
-padb.nodelay = true
-padf.keypad(true)
-padf.clear
-padf.nodelay = true
-Curses::cbreak
-Curses::start_color
-Curses::use_default_colors
-Curses::init_pair(Curses::COLOR_RED, Curses::COLOR_RED, -1)
-Curses::init_pair(Curses::COLOR_GREEN, Curses::COLOR_GREEN, -1)
+require 'lib/mycurses'
 
 #arrow_up   = Format::colorize("\u2191", :green)
 #arrow_down = Format::colorize("\u2193", :red)
 
-headers = []
-bodies  = []
-footers = []
+def mycenter(text, len, tlen)
+  b = ((len - tlen) / 2).floor
+  a = len - tlen - b
+  "#{' ' * b}#{text}#{' ' * a}"
+end
+
+mycurses = MyCurses.new(true, 3, 2)
 
 w1 = 20
 w2 = 15
@@ -94,34 +24,23 @@ w2 = 15
 border = "+#{'-' * w1}+#{'-' * w2}+"
 header = "|#{'col1'.center(w1)}|#{'col2'.center(w2)}|"
 
-headers << border
-headers << header
-headers << border
+mycurses.headers << border
+mycurses.headers << header
+mycurses.headers << border
 (1..60).each { |i|
-  bodies << "|#{"val#{i}a".center(w1)}|#{"val#{i}b".center(w2)}|"
+  str1 = "val#{i}a"
+  str2 = "val#{i}b"
+  mycurses.bodies << "|#{mycenter(Format::bold(str1, :green, :blue), w1, str1.length)}|#{mycenter(Format::underline(str2, :red, :green), w2, str2.length)}|"
 }
-footers << border
-footers << 'Press ENTER to exit...'
+mycurses.footers << border
+mycurses.footers << 'Press ENTER to exit...'
 
-max_l = myprints(headers, bodies, footers, padh, padb, padf, Curses::lines - 5, 3)
+mycurses.myprints
 
-cur_l = max_l
+mycurses.read_ch
 
-ch = padb.getch
-
-until ch == 10 || ch == Curses::Key::ENTER
-  if ch == Curses::Key::UP
-    cur_l = [0, cur_l - 1].max
-  elsif ch == Curses::Key::DOWN
-    cur_l = [max_l, cur_l + 1].min
-  end
-  if ch == Curses::Key::UP || ch == Curses::Key::DOWN
-    padh.refresh(0, 0, 0, 0, 2, Curses::cols - 1)
-    padb.refresh(cur_l, 0, 3, 0, Curses::lines - 3, Curses::cols - 1)
-    padf.refresh(0, 0, 3 + [Curses::lines - 5, bodies.count].min, 0, 3 + [Curses::lines - 5, bodies.count].min + footers.count, Curses::cols - 1)
-  end
-  sleep(0.05)
-  ch = padb.getch
+until mycurses.ch == 10 || mycurses.ch == Curses::Key::ENTER
+  mycurses.scroll_iteration
 end
 
-Curses::close_screen
+mycurses.dispose
