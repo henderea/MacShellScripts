@@ -11,16 +11,17 @@ require 'lib/format'
 require 'lib/mycurses'
 
 options = {
-    adjust_scores:    false,
-    show_both:        false,
-    update:           false,
-    update_interval:  60,
-    track_movement:   false,
-    clear_screen:     false,
-    show_diff:        false,
-    wait_on_change:   false,
-    notify_of_change: false,
-    notify_sticky:    false,
+    adjust_scores:     false,
+    show_both:         false,
+    update:            false,
+    update_interval:   60,
+    track_movement:    false,
+    clear_screen:      false,
+    show_diff:         false,
+    wait_on_change:    false,
+    notify_of_change:  false,
+    notify_sticky:     false,
+    continuous_update: false,
 }
 
 option_parser = OptionParser.new { |opts|
@@ -34,6 +35,7 @@ option_parser = OptionParser.new { |opts|
   Option::add_option(options, opts, '-w', '--wait-on-change', :wait_on_change)
   Option::add_option(options, opts, '-n', '--notify-of-change', :notify_of_change)
   Option::add_option(options, opts, '-s', '--notify-sticky', :notify_sticky)
+  Option::add_option(options, opts, '-o', '--continuous-update', :continuous_update)
 }
 
 option_parser.parse!
@@ -106,6 +108,9 @@ mycurses = MyCurses.new(options[:update], (datab_any ? 4 : 3), 2)
 
 net              = Net::HTTP.new('ci2.plab.interactions.net', 8080)
 net.read_timeout = 5
+
+last_data  = nil
+last_datab = nil
 
 def read_previous_data(options, fname, fnameb)
   previous_data  = nil
@@ -264,24 +269,33 @@ begin
     mycurses.myprints
 
     if options[:update]
-      write_data(data, datab, fname, fnameb, options)
+      write_data(data, datab, fname, fnameb, options) if !options[:continuous_update]
       time_s = Time::now
       time_e = Time::now
+      if (options[:wait_on_change] || options[:notify_of_change] || options[:continuous_update]) && (has_change(data, previous_data) || has_change(datab, previous_datab))
+        mycurses.footer_live_append('There are changes since the last check. Press ENTER to continue...')
+      end
       mycurses.clear_ch
       until (time_e - time_s) >= options[:update_interval] || mycurses.ch == 10
         time_e = Time::now
         mycurses.scroll_iteration
       end
-      if mycurses.ch != 10 && (options[:wait_on_change] || options[:notify_of_change]) && (has_change(data, previous_data) || has_change(datab, previous_datab))
+      if mycurses.ch != 10 && (options[:wait_on_change] || options[:notify_of_change] || options[:continuous_update]) && (has_change(data, previous_data) || has_change(datab, previous_datab)) && (!options[:continuous_update] || last_data.nil? || last_datab.nil? || has_change(data, last_data) || has_change(datab, last_datab))
         if options[:notify_of_change]
           `growlnotify -n Terminal -a Terminal#{(options[:notify_sticky] ? ' -s' : '')} -m "New Changes" -t "jrank"`
         end
-        mycurses.footer_live_append('There are changes since the last check. Press ENTER to continue...')
-        mycurses.clear_ch
-        until mycurses.ch == 10
-          mycurses.scroll_iteration
+        unless options[:continuous_update]
+          mycurses.clear_ch
+          until mycurses.ch == 10
+            mycurses.scroll_iteration
+          end
         end
       end
+      if mycurses.ch == 10 && options[:continuous_update]
+        write_data(data, datab, fname, fnameb, options)
+      end
+      last_data  = data
+      last_datab = datab
     end
   end while options[:update]
 ensure
