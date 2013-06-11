@@ -207,9 +207,9 @@ begin
 
     padding = 5
 
-    border = make_line("#{'-' * (len1+(padding*2)+(options[:track_movement] ? 1 : 0))}", "#{'-' * (len2b+(padding*2))}", "#{'-' * (len1+(padding*2)+(options[:track_movement] ? 1 : 0))}", "#{'-' * (len3b+(padding*2))}", datab_any, datab_only, options[:show_both], '+')
+    border = make_line("#{'-' * (len1+(padding*2)+(options[:track_movement] ? 2 : 0))}", "#{'-' * (len2b+(padding*2))}", "#{'-' * (len1+(padding*2)+(options[:track_movement] ? 2 : 0))}", "#{'-' * (len3b+(padding*2))}", datab_any, datab_only, options[:show_both], '+')
 
-    user_str   = "#{' ' * padding}#{'User'.center(len1)}#{' ' * (padding+(options[:track_movement] ? 1 : 0))}"
+    user_str   = "#{' ' * padding}#{'User'.center(len1)}#{' ' * (padding+(options[:track_movement] ? 2 : 0))}"
     score_str1 = "#{' ' * padding}#{'Score'.center(len2b)}#{' ' * padding}"
     score_str2 = "#{' ' * padding}#{'Adjusted Score'.center(len3b)}#{' ' * padding}"
 
@@ -222,8 +222,8 @@ begin
       kv2 = datab2[i]
       ds1 = options[:show_diff] ? mycenter(kv1[3], len4, kv1[4]) : ''
       ds2 = options[:show_diff] ? mycenter(kv2[3], len5, kv2[4]) : ''
-      as1 = options[:track_movement] ? kv1[2] : ''
-      as2 = options[:track_movement] ? kv2[2] : ''
+      as1 = options[:track_movement] ? " #{kv1[2]}" : ''
+      as2 = options[:track_movement] ? " #{kv2[2]}" : ''
       mycurses.bodies << make_line("#{' ' * padding}#{kv1[0].to_s.center(len1)}#{as1}#{' ' * padding}", "#{' ' * padding}#{kv1[1].to_s.center(len2)}#{ds1}#{' ' * padding}", "#{' ' * padding}#{kv2[0].to_s.center(len1)}#{as2}#{' ' * padding}", "#{' ' * padding}#{kv2[1].to_s.center(len3)}#{ds2}#{' ' * padding}", datab_any, datab_only, options[:show_both])
     }
 
