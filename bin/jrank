@@ -107,131 +107,164 @@ mycurses = MyCurses.new(options[:update], (datab_any ? 4 : 3), 2)
 net              = Net::HTTP.new('ci2.plab.interactions.net', 8080)
 net.read_timeout = 5
 
+def read_previous_data(options, fname, fnameb)
+  previous_data  = nil
+  previous_datab = nil
+
+  if options[:track_movement] || options[:show_diff]
+    previous_data = YAML::load_file(fname) if File.exist?(fname)
+    previous_datab = YAML::load_file(fnameb) if File.exist?(fnameb)
+  end
+  return previous_data, previous_datab
+end
+
+def read_source(net)
+  source = nil
+
+  while source.nil?
+    begin
+      response = net.get('/cigame/?')
+      if response.kind_of?(Net::HTTPSuccess)
+        source = response.body
+      else
+        source = nil
+      end
+    rescue
+      # ignored
+    end
+  end
+  source
+end
+
+def get_data(net, mycurses, datab_any)
+  source = read_source(net)
+
+  match_str  = '>Score</td></tr><tr>'
+  match_str2 = '</tr></table>'
+  ind        = source.index(match_str)
+  ind2       = source.index(match_str2, ind)
+
+  str = source[(ind+match_str.length)...ind2]
+
+  regex  = %r{</tr><tr>}
+  regex2 = %r{<td><a.*?>(.*?)</a></td><td>.*?</td><td>(.*?)</td>}
+
+  parts = str.split(regex)
+
+  data = {}
+
+  parts.each { |v|
+    matcher = regex2.match(v)
+    unless matcher.nil?
+      data[matcher[1]] = matcher[2].to_f.round
+    end
+  }
+
+  datab = {}
+
+  avg = data.values.average.round
+  mycurses.headers << "Average: #{avg}" if datab_any
+  data.keys.each { |k|
+    datab[k] = data[k] - avg
+  }
+  data  = data.sort_by { |k, v| -(v.abs) }
+  datab = datab.sort_by { |k, v| -(v.abs) }
+  return data, datab
+end
+
+def write_data(data, datab, fname, fnameb, options)
+  if options[:track_movement] || options[:show_diff]
+    IO::write(fname, data.to_yaml)
+    IO::write(fnameb, datab.to_yaml)
+  end
+end
+
+def extend_data(data, datab, previous_data, previous_datab)
+  data2  = add_diffs(data, previous_data)
+  datab2 = add_diffs(datab, previous_datab)
+  return data2, datab2
+end
+
+def lengths(options, data2, datab2)
+  len1 = data2.max { |a, b| a[0].to_s.length <=> b[0].to_s.length }
+  len2 = data2.max { |a, b| a[1].to_s.length <=> b[1].to_s.length }
+  len1 = len1[0].to_s.length
+  len2 = len2[1].to_s.length
+
+  if len1 < 4
+    len1 = 4
+  end
+
+  len3 = datab2.max { |a, b| a[1].to_s.length <=> b[1].to_s.length }
+  len3 = len3[1].to_s.length
+
+  len4 = (data2.max { |a, b| a[4] <=> b[4] })[4] + 2
+  len5 = (datab2.max { |a, b| a[4] <=> b[4] })[4] + 2
+
+  len2b = len2
+  len3b = len3
+
+  len2b += len4 if options[:show_diff]
+  len3b += len5 if options[:show_diff]
+
+  if len2b < 5
+    len2b = 5
+    len2  = len2b - (options[:show_diff] ? len4 : 0)
+  end
+
+  if len3b < 14
+    len3b = 14
+    len3  = len3b - (options[:show_diff] ? len5 : 0)
+  end
+  return len1, len2, len2b, len3, len3b, len4, len5
+end
+
+def add_headers(options, mycurses, border, datab_any, datab_only, len1, len2b, len3b, padding)
+  user_str   = "#{' ' * padding}#{'User'.center(len1)}#{' ' * (padding+(options[:track_movement] ? 2 : 0))}"
+  score_str1 = "#{' ' * padding}#{'Score'.center(len2b)}#{' ' * padding}"
+  score_str2 = "#{' ' * padding}#{'Adjusted Score'.center(len3b)}#{' ' * padding}"
+
+  mycurses.headers << border
+  mycurses.headers << make_line(user_str, score_str1, user_str, score_str2, datab_any, datab_only, options[:show_both])
+  mycurses.headers << border
+end
+
+def add_bodies(options, mycurses, data2, datab2, datab_any, datab_only, len1, len2, len3, len4, len5, padding)
+  (0...data2.count).each { |i|
+    kv1 = data2[i]
+    kv2 = datab2[i]
+    ds1 = options[:show_diff] ? mycenter(kv1[3], len4, kv1[4]) : ''
+    ds2 = options[:show_diff] ? mycenter(kv2[3], len5, kv2[4]) : ''
+    as1 = options[:track_movement] ? " #{kv1[2]}" : ''
+    as2 = options[:track_movement] ? " #{kv2[2]}" : ''
+    mycurses.bodies << make_line("#{' ' * padding}#{kv1[0].to_s.center(len1)}#{as1}#{' ' * padding}", "#{' ' * padding}#{kv1[1].to_s.center(len2)}#{ds1}#{' ' * padding}", "#{' ' * padding}#{kv2[0].to_s.center(len1)}#{as2}#{' ' * padding}", "#{' ' * padding}#{kv2[1].to_s.center(len3)}#{ds2}#{' ' * padding}", datab_any, datab_only, options[:show_both])
+  }
+end
+
+def add_footers(options, mycurses, border)
+  mycurses.footers << border
+  mycurses.footers << '' if options[:update]
+end
+
 begin
   begin
     mycurses.clear
 
-    previous_data  = nil
-    previous_datab = nil
-
-    if options[:track_movement] || options[:show_diff]
-      previous_data = YAML::load_file(fname) if File.exist?(fname)
-      previous_datab = YAML::load_file(fnameb) if File.exist?(fnameb)
-    end
-
-    source = nil
-
-    while source.nil?
-      begin
-        response = net.get('/cigame/?')
-        if response.kind_of?(Net::HTTPSuccess)
-          source = response.body
-        else
-          source = nil
-        end
-      rescue
-        # ignored
-      end
-    end
-
-    match_str  = '>Score</td></tr><tr>'
-    match_str2 = '</tr></table>'
-    ind        = source.index(match_str)
-    ind2       = source.index(match_str2, ind)
-
-    str = source[(ind+match_str.length)...ind2]
-
-    regex  = %r{</tr><tr>}
-    regex2 = %r{<td><a.*?>(.*?)</a></td><td>.*?</td><td>(.*?)</td>}
-
-    parts = str.split(regex)
-
-    data = {}
-
-    parts.each { |v|
-      matcher = regex2.match(v)
-      unless matcher.nil?
-        data[matcher[1]] = matcher[2].to_f.round
-      end
-    }
-
-    datab = {}
-
-    avg = data.values.average.round
-    mycurses.headers << "Average: #{avg}" if datab_any
-    data.keys.each { |k|
-      datab[k] = data[k] - avg
-    }
-
-    data  = data.sort_by { |k, v| -(v.abs) }
-    datab = datab.sort_by { |k, v| -(v.abs) }
-
-    if options[:track_movement] || options[:show_diff]
-      IO::write(fname, data.to_yaml)
-      IO::write(fnameb, datab.to_yaml)
-    end
-
-    data2  = add_diffs(data, previous_data)
-    datab2 = add_diffs(datab, previous_datab)
-
-    len1 = data.max { |a, b| a[0].to_s.length <=> b[0].to_s.length }
-    len2 = data.max { |a, b| a[1].to_s.length <=> b[1].to_s.length }
-    len1 = len1[0].to_s.length
-    len2 = len2[1].to_s.length
-
-    if len1 < 4
-      len1 = 4
-    end
-
-    len3 = datab.max { |a, b| a[1].to_s.length <=> b[1].to_s.length }
-    len3 = len3[1].to_s.length
-
-    len4 = (data2.max { |a, b| a[4] <=> b[4] })[4] + 2
-    len5 = (datab2.max { |a, b| a[4] <=> b[4] })[4] + 2
-
-    len2b = len2
-    len3b = len3
-
-    len2b += len4 if options[:show_diff]
-    len3b += len5 if options[:show_diff]
-
-    if len2b < 5
-      len2b = 5
-      len2  = len2b - (options[:show_diff] ? len4 : 0)
-    end
-
-    if len3b < 14
-      len3b = 14
-      len3  = len3b - (options[:show_diff] ? len5 : 0)
-    end
-
-    padding = 5
+    previous_data, previous_datab              = read_previous_data(options, fname, fnameb)
+    data, datab                                = get_data(net, mycurses, datab_any)
+    data2, datab2                              = extend_data(data, datab, previous_data, previous_datab)
+    len1, len2, len2b, len3, len3b, len4, len5 = lengths(options, data2, datab2)
+    padding                                    = 5
 
     border = make_line("#{'-' * (len1+(padding*2)+(options[:track_movement] ? 2 : 0))}", "#{'-' * (len2b+(padding*2))}", "#{'-' * (len1+(padding*2)+(options[:track_movement] ? 2 : 0))}", "#{'-' * (len3b+(padding*2))}", datab_any, datab_only, options[:show_both], '+')
 
-    user_str   = "#{' ' * padding}#{'User'.center(len1)}#{' ' * (padding+(options[:track_movement] ? 2 : 0))}"
-    score_str1 = "#{' ' * padding}#{'Score'.center(len2b)}#{' ' * padding}"
-    score_str2 = "#{' ' * padding}#{'Adjusted Score'.center(len3b)}#{' ' * padding}"
-
-    mycurses.headers << border
-    mycurses.headers << make_line(user_str, score_str1, user_str, score_str2, datab_any, datab_only, options[:show_both])
-    mycurses.headers << border
-
-    (0...data2.count).each { |i|
-      kv1 = data2[i]
-      kv2 = datab2[i]
-      ds1 = options[:show_diff] ? mycenter(kv1[3], len4, kv1[4]) : ''
-      ds2 = options[:show_diff] ? mycenter(kv2[3], len5, kv2[4]) : ''
-      as1 = options[:track_movement] ? " #{kv1[2]}" : ''
-      as2 = options[:track_movement] ? " #{kv2[2]}" : ''
-      mycurses.bodies << make_line("#{' ' * padding}#{kv1[0].to_s.center(len1)}#{as1}#{' ' * padding}", "#{' ' * padding}#{kv1[1].to_s.center(len2)}#{ds1}#{' ' * padding}", "#{' ' * padding}#{kv2[0].to_s.center(len1)}#{as2}#{' ' * padding}", "#{' ' * padding}#{kv2[1].to_s.center(len3)}#{ds2}#{' ' * padding}", datab_any, datab_only, options[:show_both])
-    }
-
-    mycurses.footers << border
-    mycurses.footers << '' if options[:update]
+    add_headers(options, mycurses, border, datab_any, datab_only, len1, len2b, len3b, padding)
+    add_bodies(options, mycurses, data2, datab2, datab_any, datab_only, len1, len2, len3, len4, len5, padding)
+    add_footers(options, mycurses, border)
     mycurses.myprints
 
     if options[:update]
+      write_data(data, datab, fname, fnameb, options)
       time_s = Time::now
       time_e = Time::now
       mycurses.clear_ch
