@@ -22,6 +22,7 @@ options = {
     notify_of_change:  false,
     notify_sticky:     false,
     continuous_update: false,
+    show_last_updated: false,
 }
 
 option_parser = OptionParser.new { |opts|
@@ -36,6 +37,7 @@ option_parser = OptionParser.new { |opts|
   Option::add_option(options, opts, '-n', '--notify-of-change', :notify_of_change)
   Option::add_option(options, opts, '-s', '--notify-sticky', :notify_sticky)
   Option::add_option(options, opts, '-o', '--continuous-update', :continuous_update)
+  Option::add_option(options, opts, '-l', '--show-last-updated', :show_last_updated)
 }
 
 option_parser.parse!
@@ -100,17 +102,6 @@ def has_change(data, prev_data)
   }
   rval
 end
-
-fname  = File.expand_path('~/jranka.yaml')
-fnameb = File.expand_path('~/jrankb.yaml')
-
-mycurses = MyCurses.new(options[:update], (datab_any ? 4 : 3), 2)
-
-net              = Net::HTTP.new('ci2.plab.interactions.net', 8080)
-net.read_timeout = 5
-
-last_data  = nil
-last_datab = nil
 
 def read_previous_data(options, fname, fnameb)
   previous_data  = nil
@@ -248,8 +239,20 @@ end
 
 def add_footers(options, mycurses, border)
   mycurses.footers << border
+  mycurses.footers << "Last Updated: #{Time::now.strftime('%-m/%-d/%Y %-l:%M:%S %P')}" if options[:show_last_updated]
   mycurses.footers << '' if options[:update]
 end
+
+fname  = File.expand_path('~/jranka.yaml')
+fnameb = File.expand_path('~/jrankb.yaml')
+
+mycurses = MyCurses.new(options[:update], (datab_any ? 4 : 3), (options[:show_last_updated] ? 3 : 2))
+
+net              = Net::HTTP.new('ci2.plab.interactions.net', 8080)
+net.read_timeout = 5
+
+last_data  = nil
+last_datab = nil
 
 begin
   begin
