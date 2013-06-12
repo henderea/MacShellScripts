@@ -27,7 +27,7 @@ module Format
   }
 
   def self::format(text, format_code)
-    "\e[#{format_code}m#{text}\e[0m"
+    (format_code.nil? || format_code == '') ? text : "\e[#{format_code}m#{text}\e[0m"
   end
 
   def self::build_string(bold, underline, fgcolor, bgcolor)
