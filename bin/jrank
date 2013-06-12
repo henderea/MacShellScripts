@@ -29,7 +29,7 @@ option_parser = OptionParser.new { |opts|
   Option::add_option(options, opts, '-a', '--adjust-scores', :adjust_scores)
   Option::add_option(options, opts, '-b', '--show-both', :show_both)
   Option::add_option(options, opts, '-u', '--update', :update)
-  Option::add_option_with_param_and_type(options, opts, '-i', '--update-interval INTERVAL', :update_interval, Integer)
+  Option::add_option_with_param_and_type(options, opts, '-i', '--update-interval INTERVAL', :update_interval, Float)
   Option::add_option(options, opts, '-t', '--track-movement', :track_movement)
   Option::add_option(options, opts, '-c', '--clear-screen', :clear_screen)
   Option::add_option(options, opts, '-d', '--show-diff', :show_diff)
@@ -253,9 +253,11 @@ net.read_timeout = 5
 
 last_data  = nil
 last_datab = nil
+time_s     = nil
 
 begin
   begin
+    time_s = time_s.nil? ? Time::now : time_s + options[:update_interval]
     mycurses.clear
 
     previous_data, previous_datab              = read_previous_data(options, fname, fnameb)
@@ -273,11 +275,10 @@ begin
 
     if options[:update]
       write_data(data, datab, fname, fnameb, options) if !options[:continuous_update]
-      time_s = Time::now
-      time_e = Time::now
       if (options[:wait_on_change] || options[:notify_of_change] || options[:continuous_update]) && (has_change(data, previous_data) || has_change(datab, previous_datab))
         mycurses.footer_live_append('There are changes since the last check. Press ENTER to continue...')
       end
+      time_e = Time::now
       mycurses.clear_ch
       until (time_e - time_s) >= options[:update_interval] || mycurses.ch == 10
         time_e = Time::now
