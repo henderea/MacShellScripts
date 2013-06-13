@@ -1,0 +1,55 @@
+#!/usr/bin/env ruby
+
+$LOAD_PATH << File.dirname(__FILE__)
+
+require 'fileutils'
+require 'lib/format'
+
+def stripslash(name)
+  name[-1] == '/' ? name[0...-1] : name
+end
+
+def recurse(name, arr)
+  if Dir::exist?(name) && File::directory?(name)
+    if File::basename(name) == '.svn'
+      #Dir::rmdir(name)
+      #puts "#{Format::bold('Removed:', :red)} #{Format::underline("#{name}/", :red)}"
+      arr << name
+    else
+      #puts "#{Format::bold('Checking:', :blue)} #{Format::underline("#{name}/", :blue)}"
+      entries = Dir::entries(name)
+      entries.each { |entry|
+        unless entry == '.' || entry == '..'
+          recurse("#{name}/#{entry}", arr)
+        end
+      }
+    end
+  end
+end
+
+arr = []
+
+ARGV.each { |name|
+  recurse(stripslash(name), arr)
+}
+
+ARGV.clear
+
+if arr.empty?
+  puts Format::colorize('No .svn folders found', :green)
+else
+  puts Format::bold("Found #{arr.count} .svn folders:")
+  arr.each { |v|
+    puts Format::underline(v)
+  }
+  print Format::bold('Are you sure you want to remove these (y/n or yes/no)? ')
+  ans = gets.chomp.downcase
+  if ans == 'y' || ans == 'yes'
+    arr.each { |v|
+      FileUtils::rm_rf(v)
+      puts "#{Format::bold('Removed:', :red)} #{Format::underline("#{v}/", :red)}"
+    }
+  else
+    puts Format::colorize('clearsvn canceled', :green)
+  end
+end
