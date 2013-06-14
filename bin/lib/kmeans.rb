@@ -78,7 +78,7 @@ module Enumerable
     avg = su / cnt
     ks1 = kmeans(1)
     if cnt == 1
-      return kso
+      return ks1
     end
     cso = get_clusters(ks1)
     ft1 = f_test2(cso, ks1, cnt)
