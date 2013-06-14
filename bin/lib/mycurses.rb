@@ -78,22 +78,6 @@ class MyCurses
     end
   end
 
-  def update_scroll(force_refresh = false)
-    if @ch == Curses::Key::UP
-      @cur_l = [0, @cur_l - 1].max
-    elsif @ch == Curses::Key::DOWN
-      @cur_l = [@max_l, @cur_l + 1].min
-    end
-    @cur_l = [@cur_l, @max_l].min
-    if @ch == Curses::Key::UP || @ch == Curses::Key::DOWN || force_refresh
-      Curses::refresh
-      padh_refresh
-      padb_refresh
-      padf_refresh
-    end
-    @cur_l
-  end
-
   def read_ch
     @ch = @padb.getch
   end
@@ -214,9 +198,25 @@ class MyCurses
     @padf.refresh(0, 0, @subpad_start + [@subpad_size, @bodies.count].min, 0, @subpad_start + [@subpad_size, @bodies.count].min + @footers.count, Curses::cols - 1)
   end
 
+  def update_scroll(force_refresh = false)
+    if @ch == Curses::Key::UP
+      @cur_l = [0, @cur_l - 1].max
+    elsif @ch == Curses::Key::DOWN
+      @cur_l = [@max_l, @cur_l + 1].min
+    end
+    @cur_l = [@cur_l, @max_l].min
+    if @ch == Curses::Key::UP || @ch == Curses::Key::DOWN || force_refresh
+      Curses::refresh
+      padh_refresh
+      padb_refresh
+      padf_refresh
+    end
+    @cur_l
+  end
+
   #endregion
 
   attr_reader :ch
   attr_accessor :bodies, :headers, :footers
-  private :get_format, :handle_color, :myputs, :myprint, :update_max_l, :update_subpad_size, :padh_refresh, :padb_refresh, :padf_refresh
+  private :get_format, :handle_color, :myputs, :myprint, :update_max_l, :update_subpad_size, :padh_refresh, :padb_refresh, :padf_refresh, :update_scroll
 end

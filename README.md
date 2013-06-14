@@ -55,15 +55,19 @@ Here are the descriptions for the scripts:
         * `-a` or `--adjust-scores` to adjust the scores by subtracting the average score from each score
         * `-b` or `--show-both` to show both the adjusted score ranking and the regular score ranking
         * `-u` or `--update` to update at a regular interval
-        * `-i INTERVAL` or `--update-interval INTERVAL` to set the update interval to `INTERVAL` seconds (default is 60)
+        * `-i INTERVAL` or `--update-interval INTERVAL` to set the update interval to `INTERVAL` seconds (default is 60; floating point numbers are allowed)
         * `-t` or `--track-movement` to show changes in rank with colored arrows, green up arrow for higher rank, red down arrow for lower rank, and uncolored hyphen for no change
         * `-c` or `--clear-screen` to run the `clear` command before starting
         * `-d` or `--show-diff` to show the change in score; colors positive numbers green and negative numbers red, with 0 uncolored
         * `-w` or `--wait-on-change` to wait for the user to press enter when a change is detected; it will do this after it sleeps
         * `-n` or `--notify-of-change` to display a growl notification when a change occurs; enables `-w` / `--wait-on-change` option
         * `-s` or `--notify-sticky` to make the growl notification sticky (default is non-sticky) (only matters when the `-n` / `--notify-of-change` option is enabled)
+        * `-o` or `--continuous-update` to keep updating instead of waiting for ENTER when there is an update.  The old data will not be updated until you press enter, so the diffs will not lose information
+        * `-l` or `--show-last-updated` to show the date/time of the last update to the data right below the table
+        * `-v` or `--no-absolute-value` to use regular value for the ranking
+        * `-r` or `--show-rank-index` to show the rank index next to each username
     * **displays:** prints a table with the usernames and scores with higher scores closer to the top of the table
-    * **requires:** Ruby, Growl, `growlnotify`, `lib/maputil.rb`, `lib/option.rb`, and `lib/format.rb`
+    * **requires:** Ruby, Growl, `growlnotify`, `lib/maputil.rb`, `lib/option.rb`, `lib/format.rb`, and `lib/mycurses.rb`
 * `jscomp`: use the Closure JavaScript compiler to compile and minify a JavaScript file
     * **parameters:**
         * the filename (single file)
