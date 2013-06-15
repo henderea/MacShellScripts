@@ -65,6 +65,12 @@ Signal.trap('SIGINT') {
   exit 1
 }
 
+class String
+  def start_with_any?(*strs)
+    strs.empty? ? false : strs.any? { |str| start_with?(str) }
+  end
+end
+
 color_opts = {
     time:    {
         fg: :green,
@@ -228,9 +234,7 @@ def output_lines(output, options)
 
   lines.each { |line|
     if options[:show_projects] && line =~ build_regex
-      unless info_line_last
-        puts info_line
-      end
+      puts info_line unless info_line_last
       puts line
       puts info_line
       info_line_last = true
@@ -241,14 +245,12 @@ def output_lines(output, options)
     elsif found
       puts line
       info_line_last = line.start_with?(info_line)
-    elsif line.start_with?('[ERROR] COMPILATION ERROR :') || line.start_with?('Results :')
+    elsif line.start_with_any?('[ERROR] COMPILATION ERROR :', 'Results :')
       puts line
       found          = true
       info_line_last = false
-    elsif line.start_with?('[INFO] BUILD SUCCESS') || line.start_with?('[INFO] Reactor Summary:') || line.start_with?('[INFO] BUILD FAILURE')
-      unless info_line_last
-        puts info_line
-      end
+    elsif line.start_with_any?('[INFO] BUILD SUCCESS', '[INFO] Reactor Summary:', '[INFO] BUILD FAILURE')
+      puts info_line unless info_line_last
       puts line
       found          = true
       info_line_last = false
@@ -258,9 +260,9 @@ def output_lines(output, options)
 end
 
 def start_timer_thread(color_opts, averages, options, time1)
-  Thread.new(time1, averages, options[:colored], color_opts) { |start_time, avgs, colored, color_opts|
+  Thread.new(time1, averages, options[:colored], color_opts) { |start_time, avgs, colored, colors|
     while true
-      print "\r#{get_timer_message(color_opts, avgs, colored, start_time, Time.now)}"
+      print "\r#{get_timer_message(colors, avgs, colored, start_time, Time.now)}"
       sleep(0.05)
     end
   }
@@ -269,7 +271,7 @@ end
 def show_averages(averages2)
   unless averages2.empty? || (averages2.length == 1 && averages2[0] == 0)
     strs = averages2.map { |a|
-      m, s = get_time_parts(a);
+      m, s = get_time_parts(a)
       "#{m}:#{s}"
     }
     puts "Average(s): #{strs.join(', ')}"
@@ -296,7 +298,7 @@ def run_and_filter_output(color_opts, options, cmd)
   end
 
   if options[:show_average]
-    average, averages, counts = read_avg(options)
+    average, _, _ = read_avg(options)
     average                   = read_full_avg(options, average)
     averages2                 = read_advanced_avg(options, average)
     show_averages(averages2)
