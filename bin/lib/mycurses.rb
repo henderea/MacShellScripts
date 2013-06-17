@@ -61,7 +61,7 @@ class MyCurses
       myprint(@bodies.join("\n"), @padb)
       myprint(@footers.join("\n"), @padf)
       update_max_l
-      @cur_l = @max_l
+      @cur_l = [@cur_l, @max_l].min
       padh_refresh
       padb_refresh
       padf_refresh
@@ -79,7 +79,7 @@ class MyCurses
   end
 
   def read_ch
-    @ch = @padb.getch
+    @ch = @padf.getch
   end
 
   def clear_ch
