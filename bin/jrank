@@ -122,11 +122,11 @@ def read_previous_data(options, fname, fnameb)
     previous_datab = YAML::load_file(fnameb) if File.exist?(fnameb)
   end
   if options[:no_absolute_value]
-    previous_data  = previous_data.sort_by { |_, v| -v }
-    previous_datab = previous_datab.sort_by { |_, v| -v }
+    previous_data  = previous_data.sort_by { |k, _| k}.sort_by { |_, v| -v }
+    previous_datab = previous_datab.sort_by { |k, _| k}.sort_by { |_, v| -v }
   else
-    previous_data  = previous_data.sort_by { |_, v| -(v.abs) }
-    previous_datab = previous_datab.sort_by { |_, v| -(v.abs) }
+    previous_data  = previous_data.sort_by { |k, _| k}.sort_by { |_, v| -(v.abs) }
+    previous_datab = previous_datab.sort_by { |k, _| k}.sort_by { |_, v| -(v.abs) }
   end
   return previous_data, previous_datab
 end
@@ -187,11 +187,11 @@ def get_data(options, net, mycurses, datab_any)
     datab[k] = data[k] - avg
   }
   if options[:no_absolute_value]
-    data  = data.sort_by { |_, v| -v }
-    datab = datab.sort_by { |_, v| -v }
+    data  = data.sort_by { |k, _| k}.sort_by { |_, v| -v }
+    datab = datab.sort_by { |k, _| k}.sort_by { |_, v| -v }
   else
-    data  = data.sort_by { |_, v| -(v.abs) }
-    datab = datab.sort_by { |_, v| -(v.abs) }
+    data  = data.sort_by { |k, _| k}.sort_by { |_, v| -(v.abs) }
+    datab = datab.sort_by { |k, _| k}.sort_by { |_, v| -(v.abs) }
   end
   return data, datab
 end
