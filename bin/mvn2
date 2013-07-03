@@ -94,7 +94,8 @@ end
 
 st   = options[:skip_tests] ? ' -D skipTests' : ''
 cmd2 = options[:package] ? 'package' : 'install'
-cmd  = options[:command_override].nil? ? "mvn clean #{cmd2}#{st} 2>&1" : "mvn #{options[:command_override]} 2>&1"
+headless = ' -Djava.awt.headless=true'
+cmd  = options[:command_override].nil? ? "mvn clean #{cmd2}#{st}#{headless} 2>&1" : "mvn #{options[:command_override]}#{headless} 2>&1"
 
 def full_avg_file(options)
   pkg = options[:package] ? '-package' : ''
@@ -325,4 +326,4 @@ else
   run_cmd(options[:run_failure])
 end
 
-`growlnotify -n Terminal -a Terminal#{(options[:no_sticky] ? '' : ' -s')} -m "#{(options[:command_override].nil? ? (options[:skip_tests] ? 'Build' : 'Tests') : 'Operation')} #{(result ? 'Successful' : 'Failed')}" -t "#{cmd[0...-5]}"`
+`growlnotify -n Terminal -a Terminal#{(options[:no_sticky] ? '' : ' -s')} -m "#{(options[:command_override].nil? ? (options[:skip_tests] ? 'Build' : 'Tests') : 'Operation')} #{(result ? 'Successful' : 'Failed')}" -t "#{cmd[0...(-5-headless.length)]}"`
