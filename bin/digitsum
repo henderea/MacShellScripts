@@ -1,0 +1,52 @@
+#!/usr/bin/env ruby
+
+$LOAD_PATH << File.dirname(__FILE__)
+
+require 'lib/format'
+
+message = '| You must pass a positive number to this script |'
+str     = Format::bold("+#{'-' * (message.length-2)}+", :white, :red)
+
+if ARGV.count < 1
+  puts "\n#{str}"
+  puts Format::bold(message, :white, :red)
+  puts "#{str}\n\n"
+  exit 1
+end
+
+param = ARGV.shift
+
+if param =~ /.*\D.*/
+  puts "\n#{str}"
+  puts Format::bold(message, :white, :red)
+  puts "#{str}\n\n"
+  exit 1
+end
+
+num = param.to_i
+
+if num < 1
+  puts "\n#{str}"
+  puts Format::bold(message, :white, :red)
+  puts "#{str}\n\n"
+  exit 1
+end
+
+def dsum(num)
+  sum = 0
+  tmp = num
+  while tmp > 0
+    d = tmp % 10
+    tmp = (tmp - d) / 10
+    sum += d
+  end
+  sum
+end
+
+sum = num
+puts sum
+
+while sum > 9
+  sum = dsum(sum)
+  puts sum
+end
