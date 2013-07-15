@@ -1,0 +1,77 @@
+#!/usr/bin/env ruby
+
+require 'optparse'
+
+file        = nil
+output_file = nil
+
+option_parser = OptionParser.new { |opts|
+  opts.on('-f', '--file FILE') { |name| file = name }
+  opts.on('-o', '--output-file FILE') { |name| output_file = name }
+}
+
+option_parser.parse!
+
+lines = []
+
+if file.nil?
+  val = nil
+  begin
+    begin
+      val = gets.chomp
+      if val.length > 0
+        lines << val
+      end
+    rescue
+      # ignored
+    end
+  end until val.nil? || val.length <= 0 || $stdin.eof?
+else
+  if File.exist?(file)
+    lines = IO.readlines(file).map(&:chomp)
+  else
+    puts "File '#{file}' does not exist!"
+    exit 1
+  end
+end
+
+mappings = [[%r{[\u00C0\u00C1\u00C2\u00C3\u00C4\u00C5]}, 'A'],
+            [%r{[\u00C6]}, 'AE'],
+            [%r{[\u00C7]}, 'C'],
+            [%r{[\u00C8\u00C9\u00CA\u00CB]}, 'E'],
+            [%r{[\u00CC\u00CD\u00CE\u00CF]}, 'I'],
+            [%r{[\u00D1]}, 'N'],
+            [%r{[\u00D2\u00D3\u00D4\u00D5\u00D6\u00D8]}, 'O'],
+            [%r{[\u00D7]}, 'x'],
+            [%r{[\u00D9\u00DA\u00DB\u00DC]}, 'U'],
+            [%r{[\u00DD]}, 'Y'],
+            [%r{[\u00E0\u00E1\u00E2\u00E3\u00E4\u00E5]}, 'a'],
+            [%r{[\u00E6]}, 'ae'],
+            [%r{[\u00E7]}, 'c'],
+            [%r{[\u00E8\u00E9\u00EA\u00EB]}, 'e'],
+            [%r{[\u00EC\u00ED\u00EE\u00EF]}, 'i'],
+            [%r{[\u00F1]}, 'n'],
+            [%r{[\u00F2\u00F3\u00F4\u00F5\u00F6\u00F8]}, 'o'],
+            [%r{[\u00F9\u00FA\u00FB\u00FC]}, 'u'],
+            [%r{[\u00FD\u00FF]}, 'y']]
+
+def sanitize(str, mappings)
+  rval = str
+  mappings.each { |v|
+    rval = rval.gsub(v[0], v[1])
+  }
+  rval
+end
+
+new_lines = []
+lines.each { |line|
+  new_lines << sanitize(line, mappings)
+}
+
+if output_file.nil?
+  new_lines.each { |line|
+    puts line
+  }
+else
+  IO.write(output_file, new_lines.join("\n"))
+end
