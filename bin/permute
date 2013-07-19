@@ -1,0 +1,79 @@
+#!/usr/bin/env ruby
+
+$LOAD_PATH << File.dirname(__FILE__)
+
+require 'optparse'
+require 'lib/option'
+
+options = {
+    one_per_line: false,
+    delimiter:    ', ',
+    length:       nil,
+}
+
+delimiter_set = false
+
+option_parser = OptionParser.new { |opts|
+  Option::add_option_block(options, opts, '-1', '--one-per-line', :one_per_line) {
+    unless delimiter_set
+      options[:delimiter] = nil
+    end }
+  Option::add_option_with_param_block(options, opts, '-d', '--delimiter [DELIMITER]', :delimiter) { delimiter_set = true }
+  Option::add_option_with_param_and_type(options, opts, '-l', '--length [LENGTH]', :length, Integer)
+}
+
+option_parser.parse!
+
+delim = options[:delimiter].nil? ? '' : options[:delimiter]
+
+delim << "\n" if options[:one_per_line]
+
+param = ARGV.shift
+
+values = param.chars
+
+class Perm
+  def initialize(values, length = nil)
+    @values = values
+    @length = length
+    @perms  = []
+  end
+
+  def get
+    if @length <= 0
+      []
+    else
+      recurse()
+      @perms = @perms.sort
+    end
+  end
+
+  def perms
+    @perms
+  end
+
+  def clear
+    @perms = []
+  end
+
+  def gen(inds)
+    str = ''
+    inds.each { |ind| str << @values[ind] }
+    str
+  end
+
+  def recurse(inds = [])
+    if ((@length.nil? && inds.length <= @values.length) || (!@length.nil? && inds.length == @length)) && !inds.empty?
+      @perms << gen(inds)
+    end
+    if (@length.nil? && inds.length < @values.length) || (!@length.nil? && inds.length < @length)
+      (0...@values.length).each { |i| recurse(inds + [i]) }
+    end
+  end
+end
+
+perm = Perm.new(values, options[:length])
+
+perms = perm.get
+
+puts perms.join(delim)
