@@ -95,6 +95,7 @@ else
   new_lines.each_with_index { |line, ind|
     diff_lines << [ind, line] if line[0] != line[1]
   }
+  if diff_lines.count > 0
   len0 = diff_lines.max_by { |line| line[0].to_s.length }[0].to_s.length
   len1 = diff_lines.max_by { |line| line[1][0].to_s.length }[1][0].to_s.length
   len2 = diff_lines.max_by { |line| line[1][1].to_s.length }[1][1].to_s.length
@@ -109,4 +110,7 @@ else
   puts border
   puts "\nChanged Count: #{diff_lines.count}"
   IO.write(output_file, new_lines.map { |line| line[1] }.join("\n"))
+  else
+    puts "No Items Changed"
+  end
 end
