@@ -102,8 +102,10 @@ def add_diffs(data, prev_data)
 end
 
 def has_change(data, prev_data)
-  if prev_data.nil?
+  if prev_data.nil? || data.nil?
     return false
+  elsif prev_data.count != data.count
+    return true
   end
   rval = false
   data.each_with_index { |v, i|
