@@ -31,9 +31,10 @@ options       = {
     run_after:          nil,
     run_success:        nil,
     run_failure:        nil,
+    low_mem:            false,
 }
-#abcd   h jkl n p  stuvw
-#    efg i   m o qr     xyz0123456789
+#abcd   h jklmn p  stuvw
+#    efg i     o qr     xyz0123456789
 option_parser = OptionParser.new { |opts|
   Option::add_option(options, opts, '-t', '--timer', :do_timer)
   Option::add_option(options, opts, '-s', '--skip-tests', :skip_tests)
@@ -56,6 +57,7 @@ option_parser = OptionParser.new { |opts|
   Option::add_option_with_param_single(options, opts, '--run-after CMD', :run_after)
   Option::add_option_with_param_single(options, opts, '--run-success CMD', :run_success)
   Option::add_option_with_param_single(options, opts, '--run-failure CMD', :run_failure)
+  Option::add_option(options, opts, '-m', '--low-mem', :low_mem)
 }
 
 option_parser.parse!
@@ -92,10 +94,10 @@ if options[:override_colors] && File.exist?(config_file)
   color_opts = YAML::load_file(config_file)
 end
 
-st   = options[:skip_tests] ? ' -D skipTests' : ''
-cmd2 = options[:package] ? 'package' : 'install'
+st       = options[:skip_tests] ? ' -D skipTests' : ''
+cmd2     = options[:package] ? 'package' : 'install'
 headless = ' -Djava.awt.headless=true'
-cmd  = options[:command_override].nil? ? "mvn clean #{cmd2}#{st}#{headless} 2>&1" : "mvn #{options[:command_override]}#{headless} 2>&1"
+cmd      = options[:command_override].nil? ? "mvn clean #{cmd2}#{st}#{headless} 2>&1" : "mvn #{options[:command_override]}#{headless} 2>&1"
 
 def full_avg_file(options)
   pkg = options[:package] ? '-package' : ''
@@ -223,41 +225,70 @@ def get_time_parts(time)
   return (time / 60.0).floor, '%06.3f' % (time % 60)
 end
 
+INFO_LINE   = '[INFO] ------------------------------------------------------------------------'
+BUILD_REGEX = /\[INFO\] Building (?!(jar|war))/
+
 def output_lines(output, options)
   IO.write(options[:log_file], output) if options[:write_log]
-  lines = output.lines.chompall
-  output.clear
-
   found          = false
-  info_line      = '[INFO] ------------------------------------------------------------------------'
-  build_regex    = /\[INFO\] Building (?!(jar|war))/
   info_line_last = false
+  if options[:low_mem]
+    output.each_line { |l|
+      line = l.chomp
+      if options[:show_projects] && line =~ BUILD_REGEX
+        puts INFO_LINE unless info_line_last
+        puts line
+        puts INFO_LINE
+        info_line_last = true
+      elsif options[:hide_between] && found && line.start_with?('Tests run:')
+        puts "#{line}\n\n"
+        found          = false
+        info_line_last = false
+      elsif found
+        puts line
+        info_line_last = line.start_with?(INFO_LINE)
+      elsif line.start_with_any?('[ERROR] COMPILATION ERROR :', 'Results :')
+        puts line
+        found          = true
+        info_line_last = false
+      elsif line.start_with_any?('[INFO] BUILD SUCCESS', '[INFO] Reactor Summary:', '[INFO] BUILD FAILURE')
+        puts INFO_LINE unless info_line_last
+        puts line
+        found          = true
+        info_line_last = false
+      end }
 
-  lines.each { |line|
-    if options[:show_projects] && line =~ build_regex
-      puts info_line unless info_line_last
-      puts line
-      puts info_line
-      info_line_last = true
-    elsif options[:hide_between] && found && line.start_with?('Tests run:')
-      puts "#{line}\n\n"
-      found          = false
-      info_line_last = false
-    elsif found
-      puts line
-      info_line_last = line.start_with?(info_line)
-    elsif line.start_with_any?('[ERROR] COMPILATION ERROR :', 'Results :')
-      puts line
-      found          = true
-      info_line_last = false
-    elsif line.start_with_any?('[INFO] BUILD SUCCESS', '[INFO] Reactor Summary:', '[INFO] BUILD FAILURE')
-      puts info_line unless info_line_last
-      puts line
-      found          = true
-      info_line_last = false
-    end }
+    output.each_line { |line| puts line } unless found
+  else
+    lines = output.lines.chompall
+    output.clear
 
-  lines.each { |line| puts line } unless found
+    lines.each { |line|
+      if options[:show_projects] && line =~ BUILD_REGEX
+        puts INFO_LINE unless info_line_last
+        puts line
+        puts INFO_LINE
+        info_line_last = true
+      elsif options[:hide_between] && found && line.start_with?('Tests run:')
+        puts "#{line}\n\n"
+        found          = false
+        info_line_last = false
+      elsif found
+        puts line
+        info_line_last = line.start_with?(INFO_LINE)
+      elsif line.start_with_any?('[ERROR] COMPILATION ERROR :', 'Results :')
+        puts line
+        found          = true
+        info_line_last = false
+      elsif line.start_with_any?('[INFO] BUILD SUCCESS', '[INFO] Reactor Summary:', '[INFO] BUILD FAILURE')
+        puts INFO_LINE unless info_line_last
+        puts line
+        found          = true
+        info_line_last = false
+      end }
+
+    lines.each { |line| puts line } unless found
+  end
 end
 
 def start_timer_thread(color_opts, averages, options, time1)
@@ -300,8 +331,8 @@ def run_and_filter_output(color_opts, options, cmd)
 
   if options[:show_average]
     average, _, _ = read_avg(options)
-    average                   = read_full_avg(options, average)
-    averages2                 = read_advanced_avg(options, average)
+    average       = read_full_avg(options, average)
+    averages2     = read_advanced_avg(options, average)
     show_averages(averages2)
   end
 
