@@ -1,0 +1,67 @@
+#!/usr/bin/env ruby
+
+def pbcopy(input)
+  str = input.to_s
+  IO.popen('pbcopy', 'w') { |f| f << str }
+  str
+end
+
+class Institution
+  attr_reader :id, :name, :street_address, :city, :state, :zip, :t_code, :sap_valid
+
+  def initialize(id, name, street_address, city, state, zip, t_code, sap_valid)
+    @id             = id
+    @name           = name
+    @street_address = street_address
+    @city           = city
+    @state          = state
+    @zip            = zip
+    @t_code         = t_code
+    @sap_valid      = sap_valid == 'Y'
+  end
+
+  def self.parse(str)
+    parts = str.split('","', -1)
+    parts = parts.map { |v| v.delete('"') }
+    #puts parts.inspect
+    Institution.new(*parts)
+  end
+
+  def format
+    '"' << @id << '","' << @name << '","' << @street_address << '","' << @city << '","' << @state << '","' << @zip << '","' << @t_code << '","' << (@sap_valid ? 'Y' : 'N') << '"'
+  end
+end
+
+institution_file = ARGV.shift
+
+institution_zips = {}
+
+IO.readlines(institution_file).each { |line|
+  line = line.chomp
+  inst = Institution::parse(line)
+  zip  = inst.zip
+  institution_zips[zip] = (institution_zips[zip] || []) + [inst] unless zip == '99999'
+}
+
+mx = institution_zips.values.max { |a, b| a.count <=> b.count }
+
+puts mx[0].zip
+puts mx.count
+puts
+
+output = '"Institution ID","Account / Institution Name","Institution Street Address","Institution City","Institution State","Institution Zip Code","T-code","Valid SAP ID indicator (Y/N value)"' << "\n"
+
+mx.each { |v|
+  output << v.format << "\n"
+}
+
+puts output
+
+puts
+print 'copy to clipboard (y/n)? '
+resp = gets.chomp.downcase
+
+if resp == 'y' || resp == 'yes'
+  pbcopy(output)
+  puts 'Copied to clipboard'
+end

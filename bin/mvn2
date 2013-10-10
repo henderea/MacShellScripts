@@ -235,28 +235,33 @@ def output_lines(output, options)
   if options[:low_mem]
     output.each_line { |l|
       line = l.chomp
-      if options[:show_projects] && line =~ BUILD_REGEX
-        puts INFO_LINE unless info_line_last
+      begin
+        if options[:show_projects] && line =~ BUILD_REGEX
+          puts INFO_LINE unless info_line_last
+          puts line
+          puts INFO_LINE
+          info_line_last = true
+        elsif options[:hide_between] && found && line.start_with?('Tests run:')
+          puts "#{line}\n\n"
+          found          = false
+          info_line_last = false
+        elsif found
+          puts line
+          info_line_last = line.start_with?(INFO_LINE)
+        elsif line.start_with_any?('[ERROR] COMPILATION ERROR :', 'Results :')
+          puts line
+          found          = true
+          info_line_last = false
+        elsif line.start_with_any?('[INFO] BUILD SUCCESS', '[INFO] Reactor Summary:', '[INFO] BUILD FAILURE')
+          puts INFO_LINE unless info_line_last
+          puts line
+          found          = true
+          info_line_last = false
+        end
+      rescue
         puts line
-        puts INFO_LINE
-        info_line_last = true
-      elsif options[:hide_between] && found && line.start_with?('Tests run:')
-        puts "#{line}\n\n"
-        found          = false
-        info_line_last = false
-      elsif found
-        puts line
-        info_line_last = line.start_with?(INFO_LINE)
-      elsif line.start_with_any?('[ERROR] COMPILATION ERROR :', 'Results :')
-        puts line
-        found          = true
-        info_line_last = false
-      elsif line.start_with_any?('[INFO] BUILD SUCCESS', '[INFO] Reactor Summary:', '[INFO] BUILD FAILURE')
-        puts INFO_LINE unless info_line_last
-        puts line
-        found          = true
-        info_line_last = false
-      end }
+      end
+    }
 
     output.each_line { |line| puts line } unless found
   else
@@ -264,28 +269,33 @@ def output_lines(output, options)
     output.clear
 
     lines.each { |line|
-      if options[:show_projects] && line =~ BUILD_REGEX
-        puts INFO_LINE unless info_line_last
+      begin
+        if options[:show_projects] && line =~ BUILD_REGEX
+          puts INFO_LINE unless info_line_last
+          puts line
+          puts INFO_LINE
+          info_line_last = true
+        elsif options[:hide_between] && found && line.start_with?('Tests run:')
+          puts "#{line}\n\n"
+          found          = false
+          info_line_last = false
+        elsif found
+          puts line
+          info_line_last = line.start_with?(INFO_LINE)
+        elsif line.start_with_any?('[ERROR] COMPILATION ERROR :', 'Results :')
+          puts line
+          found          = true
+          info_line_last = false
+        elsif line.start_with_any?('[INFO] BUILD SUCCESS', '[INFO] Reactor Summary:', '[INFO] BUILD FAILURE')
+          puts INFO_LINE unless info_line_last
+          puts line
+          found          = true
+          info_line_last = false
+        end
+      rescue
         puts line
-        puts INFO_LINE
-        info_line_last = true
-      elsif options[:hide_between] && found && line.start_with?('Tests run:')
-        puts "#{line}\n\n"
-        found          = false
-        info_line_last = false
-      elsif found
-        puts line
-        info_line_last = line.start_with?(INFO_LINE)
-      elsif line.start_with_any?('[ERROR] COMPILATION ERROR :', 'Results :')
-        puts line
-        found          = true
-        info_line_last = false
-      elsif line.start_with_any?('[INFO] BUILD SUCCESS', '[INFO] Reactor Summary:', '[INFO] BUILD FAILURE')
-        puts INFO_LINE unless info_line_last
-        puts line
-        found          = true
-        info_line_last = false
-      end }
+      end
+    }
 
     lines.each { |line| puts line } unless found
   end

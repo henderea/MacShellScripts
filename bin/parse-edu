@@ -1,0 +1,105 @@
+#!/usr/bin/env ruby
+
+def pbcopy(input)
+  str = input.to_s
+  IO.popen('pbcopy', 'w') { |f| f << str }
+  str
+end
+
+class Person
+  attr_reader :id, :first_name, :last_name, :destination_type, :destination_number, :extension
+
+  def initialize(id, first_name, last_name, destination_type, destination_number, extension)
+    @id                 = id
+    @first_name         = first_name
+    @last_name          = last_name
+    @destination_type   = destination_type
+    @destination_number = destination_number
+    @extension          = extension
+  end
+
+  def self.parse(str)
+    parts = str.split(',', -1)
+    parts = parts.map { |v| v.delete('"') }
+    #puts parts.inspect
+    Person.new(*parts)
+  end
+
+  def format
+    "personById.put(\"#{@id}\", new Person(\"#{@id}\", \"#{@first_name}\", \"#{@last_name}\", \"#{@destination_type}\", \"#{@destination_number}\", \"#{@extension}\"));"
+  end
+end
+
+class TCode
+  attr_reader :code, :person_for_iae, :person_for_ae, :person_for_irm
+
+  def initialize(code, person_for_iae, person_for_ae, person_for_irm)
+    @code           = code
+    @person_for_iae = person_for_iae
+    @person_for_ae  = person_for_ae
+    @person_for_irm = person_for_irm
+  end
+
+  def self.parse(str)
+    parts = str.split(',', -1)
+    parts = parts.map { |v| v.delete('"') }
+    TCode.new(*parts)
+  end
+
+  def format
+    "tCodeByCode.put(\"#{@code}\", new TCode(\"#{code}\", personById.get(\"#{@person_for_iae}\"), personById.get(\"#{@person_for_ae}\"), personById.get(\"#{@person_for_irm}\")));"
+  end
+end
+
+class Institution
+  attr_reader :id, :name, :street_address, :city, :state, :zip, :t_code, :sap_valid
+
+  def initialize(id, name, street_address, city, state, zip, t_code, sap_valid)
+    @id             = id
+    @name           = name
+    @street_address = street_address
+    @city           = city
+    @state          = state
+    @zip            = zip
+    @t_code         = t_code
+    @sap_valid      = sap_valid == 'Y'
+  end
+
+  def self.parse(str)
+    parts = str.split('","', -1)
+    parts = parts.map { |v| v.delete('"') }
+    #puts parts.inspect
+    Institution.new(*parts)
+  end
+
+  def format
+    "putInstitutionByZip(new Institution(\"#{@id}\", \"#{@name}\", \"#{@street_address}\", \"#{@city}\", \"#{@state}\", \"#{@zip}\", tCodeByCode.get(\"#{@t_code}\"), #{@sap_valid ? 'true' : 'false'}));"
+  end
+end
+
+person_file      = ARGV.shift
+t_code_file      = ARGV.shift
+institution_file = ARGV.shift
+
+output = ''
+
+IO.readlines(person_file).each { |line|
+  line = line.chomp
+  output << Person::parse(line).format << "\n" unless line.start_with?('Person ID') || line.start_with?('"Person ID"')
+}
+
+IO.readlines(t_code_file).each { |line|
+  line = line.chomp
+  output << TCode::parse(line).format << "\n" unless line.start_with?('T-code') || line.start_with?('"T-code"')
+}
+
+IO.readlines(institution_file).each { |line|
+  line = line.chomp
+  output << Institution::parse(line).format << "\n" unless line.start_with?('Institution ID') || line.start_with?('"Institution ID"')
+}
+
+#pbcopy(output)
+
+#puts 'Copied to clipboard'
+
+puts output.length.to_s.reverse.gsub(/...(?=.)/, '\&,').reverse
