@@ -43,25 +43,34 @@ IO.readlines(institution_file).each { |line|
   institution_zips[zip] = (institution_zips[zip] || []) + [inst] unless zip == '99999'
 }
 
-mx = institution_zips.values.max { |a, b| a.count <=> b.count }
+puts institution_zips.count
 
-puts mx[0].zip
-puts mx.count
-puts
-
-output = '"Institution ID","Account / Institution Name","Institution Street Address","Institution City","Institution State","Institution Zip Code","T-code","Valid SAP ID indicator (Y/N value)"' << "\n"
-
-mx.each { |v|
-  output << v.format << "\n"
+cnt = 0
+institution_zips.values.each { |v|
+  cnt += 1 if v.count > 28
 }
 
-puts output
+puts cnt
 
-puts
-print 'copy to clipboard (y/n)? '
-resp = gets.chomp.downcase
-
-if resp == 'y' || resp == 'yes'
-  pbcopy(output)
-  puts 'Copied to clipboard'
-end
+#mx = institution_zips.values.max { |a, b| a.count <=> b.count }
+#
+#puts mx[0].zip
+#puts mx.count
+#puts
+#
+#output = '"Institution ID","Account / Institution Name","Institution Street Address","Institution City","Institution State","Institution Zip Code","T-code","Valid SAP ID indicator (Y/N value)"' << "\n"
+#
+#mx.each { |v|
+#  output << v.format << "\n"
+#}
+#
+#puts output
+#
+#puts
+#print 'copy to clipboard (y/n)? '
+#resp = gets.chomp.downcase
+#
+#if resp == 'y' || resp == 'yes'
+#  pbcopy(output)
+#  puts 'Copied to clipboard'
+#end

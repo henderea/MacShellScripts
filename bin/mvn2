@@ -367,4 +367,6 @@ else
   run_cmd(options[:run_failure])
 end
 
-`growlnotify -n Terminal -a Terminal#{(options[:no_sticky] ? '' : ' -s')} -m "#{(options[:command_override].nil? ? (options[:skip_tests] ? 'Build' : 'Tests') : 'Operation')} #{(result ? 'Successful' : 'Failed')}" -t "#{cmd[0...(-5-headless.length)]}"`
+begin
+  `growlnotify -n Terminal -a Terminal#{(options[:no_sticky] ? '' : ' -s')} -m "#{(options[:command_override].nil? ? (options[:skip_tests] ? 'Build' : 'Tests') : 'Operation')} #{(result ? 'Successful' : 'Failed')}" -t "#{cmd[0...(-5-headless.length)]}" 2>&1`
+end until $?.success?

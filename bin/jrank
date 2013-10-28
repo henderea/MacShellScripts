@@ -317,7 +317,9 @@ begin
       end
       if mycurses.ch != 10 && (options[:wait_on_change] || options[:notify_of_change] || options[:continuous_update]) && (has_change(data, previous_data) || has_change(datab, previous_datab)) && (!options[:continuous_update] || last_data.nil? || last_datab.nil? || has_change(data, last_data) || has_change(datab, last_datab))
         if options[:notify_of_change]
-          `growlnotify -n Terminal -a Terminal#{(options[:notify_sticky] ? ' -s' : '')} -m "New Changes" -t "jrank"`
+          begin
+          `growlnotify -n Terminal -a Terminal#{(options[:notify_sticky] ? ' -s' : '')} -m "New Changes" -t "jrank" 2>&1`
+            end until $?.success?
         end
         unless options[:continuous_update]
           mycurses.clear_ch
