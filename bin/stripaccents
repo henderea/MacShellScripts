@@ -6,21 +6,42 @@ options = {
     file:        nil,
     output_file: nil,
     use_r:       false,
+    data:        nil,
+    copy:        false,
+    paste:       false,
 }
 
 option_parser = OptionParser.new { |opts|
   opts.on('-f', '--file FILE') { |name| options[:file] = name }
   opts.on('-o', '--output-file FILE') { |name| options[:output_file] = name }
   opts.on('-r', '--use-r') { options[:use_r] = true }
+  opts.on('-d', '--data DATA') { |data| options[:data] = data }
+  opts.on('-c', '--copy') { options[:copy] = true }
+  opts.on('-p', '--paste') { options[:paste] = true }
 }
 
 option_parser.parse!
+
+def pbcopy(input)
+  str = input.to_s
+  IO.popen('/usr/bin/pbcopy', 'w') { |f| f << str }
+  str
+end
+
+def pbpaste
+  `/usr/bin/pbpaste`
+end
 
 lines = []
 
 padding = 5
 
-if options[:file].nil?
+if options[:paste]
+  lines = [pbpaste]
+#noinspection RubyControlFlowConversionInspection
+elsif !options[:data].nil?
+  lines = [options[:data]]
+elsif options[:file].nil?
   val = nil
   begin
     begin
@@ -121,7 +142,12 @@ lines.each { |line|
   new_lines << sanitize(line, mappings)
 }
 
-if options[:output_file].nil?
+if options[:copy]
+  pbcopy(new_lines[0][1])
+#noinspection RubyControlFlowConversionInspection
+elsif !options[:data].nil?
+  print new_lines[0][1]
+elsif options[:output_file].nil?
   new_lines.each { |line|
     puts line[1]
   }
