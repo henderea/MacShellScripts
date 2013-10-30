@@ -32,6 +32,7 @@ options       = {
     run_success:        nil,
     run_failure:        nil,
     low_mem:            false,
+    exception:          false,
 }
 #abcd   h jklmn p  stuvw
 #    efg i     o qr     xyz0123456789
@@ -58,6 +59,7 @@ option_parser = OptionParser.new { |opts|
   Option::add_option_with_param_single(options, opts, '--run-success CMD', :run_success)
   Option::add_option_with_param_single(options, opts, '--run-failure CMD', :run_failure)
   Option::add_option(options, opts, '-m', '--low-mem', :low_mem)
+  Option::add_option(options, opts, '-e', '--exception', :exception)
 }
 
 option_parser.parse!
@@ -96,8 +98,9 @@ end
 
 st       = options[:skip_tests] ? ' -D skipTests' : ''
 cmd2     = options[:package] ? 'package' : 'install'
+exc      = options[:exception] ? ' -e -X' : ''
 headless = ' -Djava.awt.headless=true'
-cmd      = options[:command_override].nil? ? "mvn clean #{cmd2}#{st}#{headless} 2>&1" : "mvn #{options[:command_override]}#{headless} 2>&1"
+cmd      = options[:command_override].nil? ? "mvn clean #{cmd2}#{st}#{exc}#{headless} 2>&1" : "mvn #{options[:command_override]}#{exc}#{headless} 2>&1"
 
 def full_avg_file(options)
   pkg = options[:package] ? '-package' : ''
