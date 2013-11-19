@@ -25,10 +25,11 @@ options       = {
     show_last_updated: false,
     no_absolute_value: false,
     show_rank_index:   false,
+    threshold:         nil,
 }
 
-#abcd    i  l no  rstuvw
-#    efgh jk m  pq      xyz
+#abcd   hi  l no  rstuvw
+#    efg  jk m  pq      xyz
 
 option_parser = OptionParser.new { |opts|
   Option::add_option(options, opts, '-a', '--adjust-scores', :adjust_scores)
@@ -45,6 +46,7 @@ option_parser = OptionParser.new { |opts|
   Option::add_option(options, opts, '-l', '--show-last-updated', :show_last_updated)
   Option::add_option(options, opts, '-v', '--no-absolute-value', :no_absolute_value)
   Option::add_option(options, opts, '-r', '--show-rank-index', :show_rank_index)
+  Option::add_option_with_param_and_type(options, opts, '-h', '--threshold THRESHOLD', :threshold, Float)
 }
 
 option_parser.parse!
@@ -124,11 +126,11 @@ def read_previous_data(options, fname, fnameb)
     previous_datab = YAML::load_file(fnameb) if File.exist?(fnameb)
   end
   if options[:no_absolute_value]
-    previous_data  = previous_data.sort_by { |k, _| k}.sort_by { |_, v| -v }
-    previous_datab = previous_datab.sort_by { |k, _| k}.sort_by { |_, v| -v }
+    previous_data  = previous_data.sort_by { |k, _| k }.sort_by { |_, v| -v }
+    previous_datab = previous_datab.sort_by { |k, _| k }.sort_by { |_, v| -v }
   else
-    previous_data  = previous_data.sort_by { |k, _| k}.sort_by { |_, v| -(v.abs) }
-    previous_datab = previous_datab.sort_by { |k, _| k}.sort_by { |_, v| -(v.abs) }
+    previous_data  = previous_data.sort_by { |k, _| k }.sort_by { |_, v| -(v.abs) }
+    previous_datab = previous_datab.sort_by { |k, _| k }.sort_by { |_, v| -(v.abs) }
   end
   return previous_data, previous_datab
 end
@@ -184,16 +186,22 @@ def get_data(options, net, mycurses, datab_any)
   datab = {}
 
   avg = data.values.average.round
-  mycurses.headers << "Average: #{avg}" if datab_any
+  if options[:threshold].nil?
+    avg2text = ''
+  else
+    avg2 = data.values.select { |i| (options[:no_absolute_value] ? i : i.abs) >= options[:threshold] }.average.round
+    avg2text = "     Average (i#{options[:no_absolute_value] ? '' : '.abs'} >= #{options[:threshold]}): #{avg2}"
+  end
+  mycurses.headers << "Average: #{avg}#{avg2text}" if datab_any
   data.keys.each { |k|
     datab[k] = data[k] - avg
   }
   if options[:no_absolute_value]
-    data  = data.sort_by { |k, _| k}.sort_by { |_, v| -v }
-    datab = datab.sort_by { |k, _| k}.sort_by { |_, v| -v }
+    data  = data.sort_by { |k, _| k }.sort_by { |_, v| -v }
+    datab = datab.sort_by { |k, _| k }.sort_by { |_, v| -v }
   else
-    data  = data.sort_by { |k, _| k}.sort_by { |_, v| -(v.abs) }
-    datab = datab.sort_by { |k, _| k}.sort_by { |_, v| -(v.abs) }
+    data  = data.sort_by { |k, _| k }.sort_by { |_, v| -(v.abs) }
+    datab = datab.sort_by { |k, _| k }.sort_by { |_, v| -(v.abs) }
   end
   return data, datab
 end
@@ -318,8 +326,8 @@ begin
       if mycurses.ch != 10 && (options[:wait_on_change] || options[:notify_of_change] || options[:continuous_update]) && (has_change(data, previous_data) || has_change(datab, previous_datab)) && (!options[:continuous_update] || last_data.nil? || last_datab.nil? || has_change(data, last_data) || has_change(datab, last_datab))
         if options[:notify_of_change]
           begin
-          `growlnotify -n Terminal -a Terminal#{(options[:notify_sticky] ? ' -s' : '')} -m "New Changes" -t "jrank" 2>&1`
-            end until $?.success?
+            `growlnotify -n Terminal -a Terminal#{(options[:notify_sticky] ? ' -s' : '')} -m "New Changes" -t "jrank" 2>&1`
+          end until $?.success?
         end
         unless options[:continuous_update]
           mycurses.clear_ch
