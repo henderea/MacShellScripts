@@ -25,7 +25,7 @@ options       = {
     show_last_updated: false,
     no_absolute_value: false,
     show_rank_index:   false,
-    threshold:         nil,
+    threshold:         [],
 }
 
 #abcd   hi  l no  rstuvw
@@ -46,7 +46,7 @@ option_parser = OptionParser.new { |opts|
   Option::add_option(options, opts, '-l', '--show-last-updated', :show_last_updated)
   Option::add_option(options, opts, '-v', '--no-absolute-value', :no_absolute_value)
   Option::add_option(options, opts, '-r', '--show-rank-index', :show_rank_index)
-  Option::add_option_with_param_and_type(options, opts, '-h', '--threshold THRESHOLD', :threshold, Float)
+  Option::add_option_with_param_and_type_append(options, opts, '-h', '--threshold THRESHOLD', :threshold, Float)
 }
 
 option_parser.parse!
@@ -186,13 +186,7 @@ def get_data(options, net, mycurses, datab_any)
   datab = {}
 
   avg = data.values.average.round
-  if options[:threshold].nil?
-    avg2text = ''
-  else
-    avg2 = data.values.select { |i| (options[:no_absolute_value] ? i : i.abs) >= options[:threshold] }.average.round
-    avg2text = "     Average (i#{options[:no_absolute_value] ? '' : '.abs'} >= #{options[:threshold]}): #{avg2}"
-  end
-  mycurses.headers << "Average: #{avg}#{avg2text}" if datab_any
+  mycurses.headers << "Average: #{avg}#{calc_extra_avgs(options, data)}" if datab_any
   data.keys.each { |k|
     datab[k] = data[k] - avg
   }
@@ -204,6 +198,15 @@ def get_data(options, net, mycurses, datab_any)
     datab = datab.sort_by { |k, _| k }.sort_by { |_, v| -(v.abs) }
   end
   return data, datab
+end
+
+def calc_extra_avgs(options, data)
+  rval = ''
+  options[:threshold].each { |v|
+    avg2 = data.values.select { |i| (options[:no_absolute_value] ? i : i.abs) >= v }.average.round
+    rval << "    Average (i#{options[:no_absolute_value] ? '' : '.abs'} >= #{v}): #{avg2}"
+  }
+  rval
 end
 
 def write_data(data, datab, fname, fnameb, options)

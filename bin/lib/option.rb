@@ -46,4 +46,36 @@ module Option
   def self.add_option_with_param_and_type_single_block(options, opts, name, opt_name, type, &block)
     opts.on(name, type) { |param| options[opt_name] = param; block.call }
   end
+
+  def self.add_option_with_param_append(options, opts, short_name, long_name, opt_name)
+    opts.on(short_name, long_name) { |param| options[opt_name] << param }
+  end
+
+  def self.add_option_with_param_and_type_append(options, opts, short_name, long_name, opt_name, type)
+    opts.on(short_name, long_name, type) { |param| options[opt_name] << param }
+  end
+
+  def self.add_option_with_param_single_append(options, opts, name, opt_name)
+    opts.on(name) { |param| options[opt_name] << param }
+  end
+
+  def self.add_option_with_param_and_type_single_append(options, opts, name, opt_name, type)
+    opts.on(name, type) { |param| options[opt_name] << param }
+  end
+
+  def self.add_option_with_param_block_append(options, opts, short_name, long_name, opt_name, &block)
+    opts.on(short_name, long_name) { |param| options[opt_name] << param; block.call }
+  end
+
+  def self.add_option_with_param_and_type_block_append(options, opts, short_name, long_name, opt_name, type, &block)
+    opts.on(short_name, long_name, type) { |param| options[opt_name] << param; block.call }
+  end
+
+  def self.add_option_with_param_single_block_append(options, opts, name, opt_name, &block)
+    opts.on(name) { |param| options[opt_name] << param; block.call }
+  end
+
+  def self.add_option_with_param_and_type_single_block_append(options, opts, name, opt_name, type, &block)
+    opts.on(name, type) { |param| options[opt_name] << param; block.call }
+  end
 end
