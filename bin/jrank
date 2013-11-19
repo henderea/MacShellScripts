@@ -26,10 +26,11 @@ options       = {
     no_absolute_value: false,
     show_rank_index:   false,
     threshold:         [],
+    positive_negative: false,
 }
 
-#abcd   hi  l no  rstuvw
-#    efg  jk m  pq      xyz
+#abcd   hi  l nop rstuvw
+#    efg  jk m   q      xyz
 
 option_parser = OptionParser.new { |opts|
   Option::add_option(options, opts, '-a', '--adjust-scores', :adjust_scores)
@@ -47,6 +48,7 @@ option_parser = OptionParser.new { |opts|
   Option::add_option(options, opts, '-v', '--no-absolute-value', :no_absolute_value)
   Option::add_option(options, opts, '-r', '--show-rank-index', :show_rank_index)
   Option::add_option_with_param_and_type_append(options, opts, '-h', '--threshold THRESHOLD', :threshold, Float)
+  Option::add_option(options, opts, '-p', '--positive-negative', :positive_negative)
 }
 
 option_parser.parse!
@@ -202,6 +204,12 @@ end
 
 def calc_extra_avgs(options, data)
   rval = ''
+  if options[:positive_negative]
+    avgp = data.values.select { |i| i >= 0 }.average.round
+    rval << "    Average (i >= 0): #{avgp}"
+    avgn = data.values.select { |i| i < 0 }.average.round
+    rval << "    Average (i < 0): #{avgn}"
+  end
   options[:threshold].each { |v|
     avg2 = data.values.select { |i| (options[:no_absolute_value] ? i : i.abs) >= v }.average.round
     rval << "    Average (i#{options[:no_absolute_value] ? '' : '.abs'} >= #{v}): #{avg2}"
