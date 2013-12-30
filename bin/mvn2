@@ -34,6 +34,7 @@ options       = {
     low_mem:            false,
     exception:          false,
     live_print:         false,
+    mobile_number:      nil
 }
 #abcd   h jklmn p  stuvw   0
 #    efg i     o qr     xyz 123456789
@@ -62,6 +63,7 @@ option_parser = OptionParser.new { |opts|
   Option::add_option(options, opts, '-m', '--low-mem', :low_mem)
   Option::add_option(options, opts, '-e', '--exception', :exception)
   Option::add_option(options, opts, '-0', '--live-print', :live_print)
+  Option::add_option_with_param_single(options, opts, '--mobile-number NUM', :mobile_number)
 }
 
 option_parser.parse!
@@ -368,6 +370,27 @@ else
   run_cmd(options[:run_failure])
 end
 
+message_text  = "#{(options[:command_override].nil? ? (options[:skip_tests] ? 'Build' : 'Tests') : 'Operation')} #{(result ? 'Successful' : 'Failed')}"
+message_title = cmd[0...(-5-headless.length)]
+
+unless options[:mobile_number].nil?
+  begin
+    require 'nexmo'
+  rescue
+    puts 'You need to run \'gem install nexmo\' to use this feature'
+    exit 1
+  end
+  path = Dir.getwd
+
+  path = path[(path.rindex('/')+1)..-1]
+
+  sms_message = "#{path}: #{message_text}"
+
+  nexmo = Nexmo::Client.new('8c3b6e7d', 'a1d2ac24')
+
+  nexmo.send_message!({ :to => options[:mobile_number], :from => '13179120742', :text => sms_message })
+end
+
 begin
-  `growlnotify -n Terminal -a Terminal#{(options[:no_sticky] ? '' : ' -s')} -m "#{(options[:command_override].nil? ? (options[:skip_tests] ? 'Build' : 'Tests') : 'Operation')} #{(result ? 'Successful' : 'Failed')}" -t "#{cmd[0...(-5-headless.length)]}" 2>&1`
+  `growlnotify -n Terminal -a Terminal#{(options[:no_sticky] ? '' : ' -s')} -m "#{message_text}" -t "#{message_title}" 2>&1`
 end until $?.success?
