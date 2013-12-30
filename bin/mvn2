@@ -231,7 +231,7 @@ def get_time_parts(time)
 end
 
 INFO_LINE   = '[INFO] ------------------------------------------------------------------------'
-BUILD_REGEX = /\[INFO\] Building (?!(jar|war))/
+BUILD_REGEX = /\[INFO\] Building (?!(jar|war|zip))/
 
 def filter_line(found, info_line_last, l, options, puts_prefix = '')
   line = l.chomp
