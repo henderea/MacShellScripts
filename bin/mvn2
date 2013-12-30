@@ -33,9 +33,10 @@ options       = {
     run_failure:        nil,
     low_mem:            false,
     exception:          false,
+    live_print:         false,
 }
-#abcd   h jklmn p  stuvw
-#    efg i     o qr     xyz0123456789
+#abcd   h jklmn p  stuvw   0
+#    efg i     o qr     xyz 123456789
 option_parser = OptionParser.new { |opts|
   Option::add_option(options, opts, '-t', '--timer', :do_timer)
   Option::add_option(options, opts, '-s', '--skip-tests', :skip_tests)
@@ -60,6 +61,7 @@ option_parser = OptionParser.new { |opts|
   Option::add_option_with_param_single(options, opts, '--run-failure CMD', :run_failure)
   Option::add_option(options, opts, '-m', '--low-mem', :low_mem)
   Option::add_option(options, opts, '-e', '--exception', :exception)
+  Option::add_option(options, opts, '-0', '--live-print', :live_print)
 }
 
 option_parser.parse!
@@ -231,39 +233,44 @@ end
 INFO_LINE   = '[INFO] ------------------------------------------------------------------------'
 BUILD_REGEX = /\[INFO\] Building (?!(jar|war))/
 
+def filter_line(found, info_line_last, l, options, puts_prefix = '')
+  line = l.chomp
+  begin
+    if options[:show_projects] && line =~ BUILD_REGEX
+      puts "#{puts_prefix}#{INFO_LINE}" unless info_line_last
+      puts "#{puts_prefix}#{line}"
+      puts "#{puts_prefix}#{INFO_LINE}"
+      info_line_last = true
+    elsif options[:hide_between] && found && line.start_with?('Tests run:')
+      puts "#{puts_prefix}#{line}\n\n"
+      found          = false
+      info_line_last = false
+    elsif found
+      puts "#{puts_prefix}#{line}"
+      info_line_last = line.start_with?(INFO_LINE)
+    elsif line.start_with_any?('[ERROR] COMPILATION ERROR :', 'Results :')
+      puts "#{puts_prefix}#{line}"
+      found          = true
+      info_line_last = false
+    elsif line.start_with_any?('[INFO] BUILD SUCCESS', '[INFO] Reactor Summary:', '[INFO] BUILD FAILURE')
+      puts "#{puts_prefix}#{INFO_LINE}" unless info_line_last
+      puts "#{puts_prefix}#{line}"
+      found          = true
+      info_line_last = false
+    end
+  rescue
+    puts "#{puts_prefix}#{line}"
+  end
+  return found, info_line_last
+end
+
 def output_lines(output, options)
   IO.write(options[:log_file], output) if options[:write_log]
   found          = false
   info_line_last = false
   if options[:low_mem]
     output.each_line { |l|
-      line = l.chomp
-      begin
-        if options[:show_projects] && line =~ BUILD_REGEX
-          puts INFO_LINE unless info_line_last
-          puts line
-          puts INFO_LINE
-          info_line_last = true
-        elsif options[:hide_between] && found && line.start_with?('Tests run:')
-          puts "#{line}\n\n"
-          found          = false
-          info_line_last = false
-        elsif found
-          puts line
-          info_line_last = line.start_with?(INFO_LINE)
-        elsif line.start_with_any?('[ERROR] COMPILATION ERROR :', 'Results :')
-          puts line
-          found          = true
-          info_line_last = false
-        elsif line.start_with_any?('[INFO] BUILD SUCCESS', '[INFO] Reactor Summary:', '[INFO] BUILD FAILURE')
-          puts INFO_LINE unless info_line_last
-          puts line
-          found          = true
-          info_line_last = false
-        end
-      rescue
-        puts line
-      end
+      found, info_line_last = filter_line(found, info_line_last, l, options)
     }
 
     output.each_line { |line| puts line } unless found
@@ -271,33 +278,8 @@ def output_lines(output, options)
     lines = output.lines.chompall
     output.clear
 
-    lines.each { |line|
-      begin
-        if options[:show_projects] && line =~ BUILD_REGEX
-          puts INFO_LINE unless info_line_last
-          puts line
-          puts INFO_LINE
-          info_line_last = true
-        elsif options[:hide_between] && found && line.start_with?('Tests run:')
-          puts "#{line}\n\n"
-          found          = false
-          info_line_last = false
-        elsif found
-          puts line
-          info_line_last = line.start_with?(INFO_LINE)
-        elsif line.start_with_any?('[ERROR] COMPILATION ERROR :', 'Results :')
-          puts line
-          found          = true
-          info_line_last = false
-        elsif line.start_with_any?('[INFO] BUILD SUCCESS', '[INFO] Reactor Summary:', '[INFO] BUILD FAILURE')
-          puts INFO_LINE unless info_line_last
-          puts line
-          found          = true
-          info_line_last = false
-        end
-      rescue
-        puts line
-      end
+    lines.each { |l|
+      found, info_line_last = filter_line(found, info_line_last, l, options)
     }
 
     lines.each { |line| puts line } unless found
@@ -331,8 +313,24 @@ def run_and_filter_output(color_opts, options, cmd)
   time1  = Time.now
   thread = options[:do_timer] ? start_timer_thread(color_opts, averages2, options, time1) : nil
 
-  output = `#{cmd}`
-  result = $?.success?
+  if options[:live_print]
+    found          = false
+    info_line_last = false
+    result         = false
+    begin
+      log_file = options[:write_log] ? File.open(options[:log_file], 'w+') : nil
+      IO.popen(cmd).each do |l|
+        log_file << l unless log_file.nil?
+        found, info_line_last = filter_line(found, info_line_last, l, options, "\r\e[2K")
+        result                = true if l.chomp.start_with?('[INFO] BUILD SUCCESS')
+      end
+    ensure
+      log_file.close unless log_file.nil?
+    end
+  else
+    output = `#{cmd}`
+    result = $?.success?
+  end
 
   update_avg(average, averages, counts, options, result, time1)
   update_full_avg(average, options, result, time1)
@@ -349,7 +347,7 @@ def run_and_filter_output(color_opts, options, cmd)
     show_averages(averages2)
   end
 
-  output_lines(output, options)
+  output_lines(output, options) unless options[:live_print]
   result
 end
 
