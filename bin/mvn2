@@ -34,10 +34,16 @@ options       = {
     low_mem:            false,
     exception:          false,
     live_print:         false,
-    mobile_number:      nil
+    mobile_number:      nil,
 }
-#abcd   h jklmn p  stuvw   0
-#    efg i     o qr     xyz 123456789
+
+if File.exist?('mvn2-defaults.yaml')
+  options = YAML::load_file('mvn2-defaults.yaml')
+end
+
+set_defaults = false
+#abcd   h jklmn p  stuvw   01
+#    efg i     o qr     xyz  23456789
 option_parser = OptionParser.new { |opts|
   Option::add_option(options, opts, '-t', '--timer', :do_timer)
   Option::add_option(options, opts, '-s', '--skip-tests', :skip_tests)
@@ -64,9 +70,14 @@ option_parser = OptionParser.new { |opts|
   Option::add_option(options, opts, '-e', '--exception', :exception)
   Option::add_option(options, opts, '-0', '--live-print', :live_print)
   Option::add_option_with_param_single(options, opts, '--mobile-number NUM', :mobile_number)
+  opts.on('-1', '--set-defaults') { set_defaults = true }
 }
 
 option_parser.parse!
+
+if set_defaults
+  IO.write('mvn2-defaults.yaml', options.to_yaml)
+end
 
 Signal.trap('SIGINT') {
   puts "\nBuild Canceled\n\n"
