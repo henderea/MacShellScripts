@@ -77,6 +77,8 @@ option_parser.parse!
 
 if set_defaults
   IO.write('mvn2-defaults.yaml', options.to_yaml)
+  puts 'Defaults set'
+  exit 0
 end
 
 Signal.trap('SIGINT') {
