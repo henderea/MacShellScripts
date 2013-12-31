@@ -122,8 +122,8 @@ end
 def read_page(path)
   begin
     return Net::HTTP.get(WEB_DOMAIN, "#{BASE_PATH}#{path}")
-  rescue Exception => e
-    puts e.message
+  rescue
+    # ignored
   end
   nil
 end
@@ -328,15 +328,11 @@ class Mvn2
   end
 
   def start_timer_thread2
-    puts 'hi'
     Thread.new(@time1) { |start_time|
       begin
-        puts 'hi'
         path = Dir.getwd
         path = path[(path.rindex('/')+1)..-1]
-        puts path
         id  = read_page("create?phone=#{@options[:mobile_number]}&name=#{path}")
-        puts id
         while true
           sleep(2.5)
           diff     = Time.now - start_time
@@ -344,8 +340,6 @@ class Mvn2
           progress = (diff / avg) * 100.0
           read_page("update?id=#{id}&time=#{diff}&progress=#{progress}")
         end
-      rescue Exception => e
-          puts e.message
       ensure
         read_page("remove?id=#{id}")
       end
