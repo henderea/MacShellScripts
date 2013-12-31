@@ -113,297 +113,306 @@ if options[:override_colors] && File.exist?(config_file)
   color_opts = YAML::load_file(config_file)
 end
 
-st       = options[:skip_tests] ? ' -D skipTests' : ''
-cmd2     = options[:package] ? 'package' : 'install'
-exc      = options[:exception] ? ' -e -X' : ''
-headless = ' -Djava.awt.headless=true'
-cmd      = options[:command_override].nil? ? "mvn clean #{cmd2}#{st}#{exc}#{headless} 2>&1" : "mvn #{options[:command_override]}#{exc}#{headless} 2>&1"
+class Mvn2
+  HEADLESS = ' -Djava.awt.headless=true'
 
-def full_avg_file(options)
-  pkg = options[:package] ? '-package' : ''
-  options[:skip_tests] ? "avg-skip#{pkg}.txt" : "avg-test#{pkg}.txt"
-end
-
-def read_full_avg(options, avg)
-  average   = avg
-  file_name = full_avg_file(options)
-  if options[:command_override].nil? && options[:track_full_average] && File.exist?(file_name)
-    lines   = IO.readlines(file_name)
-    data    = lines.filtermap { |line|
-      begin
-        f = line.chomp
-        f.length == 0 || (f =~ /^\d+(\.\d+)?$/).nil? ? false : f.to_f
-      rescue
-        false
-      end
-    }
-    average = data.average
+  def initialize(options, color_opts)
+    @options = options
+    @color_opts = color_opts
+    st       = @options[:skip_tests] ? ' -D skipTests' : ''
+    cmd2     = @options[:package] ? 'package' : 'install'
+    exc      = @options[:exception] ? ' -e -X' : ''
+    @cmd      = @options[:command_override].nil? ? "mvn clean #{cmd2}#{st}#{exc}#{HEADLESS} 2>&1" : "mvn #{options[:command_override]}#{exc}#{HEADLESS} 2>&1"
   end
-  average
-end
 
-def read_advanced_avg(options, avg)
-  averages  = [avg]
-  file_name = full_avg_file(options)
-  if options[:command_override].nil? && options[:track_full_average] && options[:advanced_average] && File.exist?(file_name)
-    lines    = IO.readlines(file_name)
-    data     = lines.filtermap { |line|
-      begin
-        f = line.chomp
-        f.length == 0 || (f =~ /^\d+(\.\d+)?$/).nil? ? false : f.to_f
-      rescue
-        false
-      end
-    }
-    averages = data.nmeans
+  def full_avg_file
+    pkg = @options[:package] ? '-package' : ''
+    @options[:skip_tests] ? "avg-skip#{pkg}.txt" : "avg-test#{pkg}.txt"
   end
-  averages
-end
 
-def update_full_avg(average, options, result, time1)
-  unless options[:block_update]
-    options[:command_override].nil? && options[:track_full_average] && (result || !options[:skip_tests])
-    time2 = Time.now
-    diff  = time2 - time1
-
-    if result || (!options[:skip_tests] && diff >= average / 2.0)
-      file = File.new(full_avg_file(options), 'a+')
-      file.puts(diff)
-      file.close
+  def read_full_avg
+    average   = @average
+    file_name = full_avg_file
+    if @options[:command_override].nil? && @options[:track_full_average] && File.exist?(file_name)
+      lines   = IO.readlines(file_name)
+      data    = lines.filtermap { |line|
+        begin
+          f = line.chomp
+          f.length == 0 || (f =~ /^\d+(\.\d+)?$/).nil? ? false : f.to_f
+        rescue
+          false
+        end
+      }
+      average = data.average
     end
+    average
   end
-end
 
-def get_data(averages, counts, lines, ind)
-  if lines.count > ind
-    parts         = lines[ind].chomp.split(';')
-    averages[ind] = parts[0].to_f
-    counts[ind]   = parts[1].to_i
-    averages[ind] = 0 if counts[ind] == 0
+  def read_advanced_avg
+    averages  = [@average]
+    file_name = full_avg_file
+    if @options[:command_override].nil? && @options[:track_full_average] && @options[:advanced_average] && File.exist?(file_name)
+      lines    = IO.readlines(file_name)
+      data     = lines.filtermap { |line|
+        begin
+          f = line.chomp
+          f.length == 0 || (f =~ /^\d+(\.\d+)?$/).nil? ? false : f.to_f
+        rescue
+          false
+        end
+      }
+      averages = data.nmeans
+    end
+    averages
   end
-end
 
-def read_avg(options)
-  average  = 0
-  averages = [0, 0, 0, 0]
-  counts   = [0, 0, 0, 0]
-  if options[:command_override].nil? && options[:track_average] && File.exist?('avg.txt')
-    lines = IO.readlines('avg.txt')
-    get_data(averages, counts, lines, 0)
-    get_data(averages, counts, lines, 1)
-    get_data(averages, counts, lines, 2)
-    get_data(averages, counts, lines, 3)
-    pkg     = options[:package] ? 2 : 0
-    average = averages[(options[:skip_tests] ? 0 : 1) + pkg]
-  end
-  return average, averages, counts
-end
+  def update_full_avg
+    unless @options[:block_update]
+      @options[:command_override].nil? && @options[:track_full_average] && (@result || !options[:skip_tests])
 
-def calc_new_avg(averages, counts, diff, ind)
-  sum           = averages[ind] * counts[ind] + diff
-  counts[ind]   += 1
-  averages[ind] = sum / counts[ind]
-end
-
-def update_avg(average, averages, counts, options, result, time1)
-  unless options[:block_update]
-    if options[:command_override].nil? && options[:track_average] && (result || !options[:skip_tests])
-      time2 = Time.now
-      diff  = time2 - time1
-
-      if result || diff >= average / 2.0
-        options[:skip_tests] ? calc_new_avg(averages, counts, diff, 0) : calc_new_avg(averages, counts, diff, 1)
-        IO.write('avg.txt', "#{averages[0]};#{counts[0]}\n#{averages[1]};#{counts[1]}\n#{averages[2]};#{counts[2]}\n#{averages[3]};#{counts[3]}")
+      if @result || (!options[:skip_tests] && @diff >= @average / 2.0)
+        file = File.new(full_avg_file, 'a+')
+        file.puts(@diff)
+        file.close
       end
     end
   end
-end
 
-def colorize_if_should(text, colors, colored)
-  colored ? Format::colorize(text, colors[:fg], colors[:bg]) : text
-end
-
-def get_avg_message(color_opts, amin, asec, avg, colored, diff, m, s)
-  progress = ((diff.to_f / avg.to_f) * 100.0)
-  bars     = [progress.floor, 100].min
-  "[#{'=' * bars}>#{' ' * (100 - bars)}] #{colorize_if_should("#{m}:#{s}", color_opts[:time], colored)} (#{colorize_if_should("~#{'%.3f' % progress}%", color_opts[:percent], colored)}) (average: #{colorize_if_should("#{amin}:#{asec}", color_opts[:average], colored)})"
-end
-
-def get_closest(averages, time)
-  averages.min { |a, b| (a - time).abs <=> (b - time).abs }
-end
-
-def get_timer_message(color_opts, avgs, colored, start_time, time)
-  diff       = time - start_time
-  avg        = get_closest(avgs, diff)
-  amin, asec = get_time_parts(avg)
-  m, s       = get_time_parts(diff)
-  (avg == 0) ? colorize_if_should("#{m}:#{s}", color_opts[:time], colored) : get_avg_message(color_opts, amin, asec, avg, colored, diff, m, s)
-end
-
-def get_time_parts(time)
-  return (time / 60.0).floor, '%06.3f' % (time % 60)
-end
-
-INFO_LINE   = '[INFO] ------------------------------------------------------------------------'
-BUILD_REGEX = /\[INFO\] Building (?!(jar|war|zip))/
-
-def filter_line(found, info_line_last, l, options, puts_prefix = '')
-  line = l.chomp
-  begin
-    if options[:show_projects] && line =~ BUILD_REGEX
-      puts "#{puts_prefix}#{INFO_LINE}" unless info_line_last
-      puts "#{puts_prefix}#{line}"
-      puts "#{puts_prefix}#{INFO_LINE}"
-      info_line_last = true
-    elsif options[:hide_between] && found && line.start_with?('Tests run:')
-      puts "#{puts_prefix}#{line}\n\n"
-      found          = false
-      info_line_last = false
-    elsif found
-      puts "#{puts_prefix}#{line}"
-      info_line_last = line.start_with?(INFO_LINE)
-    elsif line.start_with_any?('[ERROR] COMPILATION ERROR :', 'Results :')
-      puts "#{puts_prefix}#{line}"
-      found          = true
-      info_line_last = false
-    elsif line.start_with_any?('[INFO] BUILD SUCCESS', '[INFO] Reactor Summary:', '[INFO] BUILD FAILURE')
-      puts "#{puts_prefix}#{INFO_LINE}" unless info_line_last
-      puts "#{puts_prefix}#{line}"
-      found          = true
-      info_line_last = false
+  def get_data(averages, counts, lines, ind)
+    if lines.count > ind
+      parts         = lines[ind].chomp.split(';')
+      averages[ind] = parts[0].to_f
+      counts[ind]   = parts[1].to_i
+      averages[ind] = 0 if counts[ind] == 0
     end
-  rescue
-    puts "#{puts_prefix}#{line}"
   end
-  return found, info_line_last
-end
 
-def output_lines(output, options)
-  IO.write(options[:log_file], output) if options[:write_log]
-  found          = false
-  info_line_last = false
-  if options[:low_mem]
-    output.each_line { |l|
-      found, info_line_last = filter_line(found, info_line_last, l, options)
-    }
-
-    output.each_line { |line| puts line } unless found
-  else
-    lines = output.lines.chompall
-    output.clear
-
-    lines.each { |l|
-      found, info_line_last = filter_line(found, info_line_last, l, options)
-    }
-
-    lines.each { |line| puts line } unless found
-  end
-end
-
-def start_timer_thread(color_opts, averages, options, time1)
-  Thread.new(time1, averages, options[:colored], color_opts) { |start_time, avgs, colored, colors|
-    while true
-      print "\r#{get_timer_message(colors, avgs, colored, start_time, Time.now)}"
-      sleep(0.05)
+  def read_avg
+    average  = 0
+    averages = [0, 0, 0, 0]
+    counts   = [0, 0, 0, 0]
+    if @options[:command_override].nil? && @options[:track_average] && File.exist?('avg.txt')
+      lines = IO.readlines('avg.txt')
+      get_data(averages, counts, lines, 0)
+      get_data(averages, counts, lines, 1)
+      get_data(averages, counts, lines, 2)
+      get_data(averages, counts, lines, 3)
+      pkg     = @options[:package] ? 2 : 0
+      average = averages[(@options[:skip_tests] ? 0 : 1) + pkg]
     end
-  }
-end
-
-def show_averages(averages2)
-  unless averages2.empty? || (averages2.length == 1 && averages2[0] == 0)
-    strs = averages2.map { |a|
-      m, s = get_time_parts(a)
-      "#{m}:#{s}"
-    }
-    puts "Average(s): #{strs.join(', ')}"
+    return average, averages, counts
   end
-end
 
-def run_and_filter_output(color_opts, options, cmd)
-  average, averages, counts = read_avg(options)
-  average                   = read_full_avg(options, average)
-  averages2                 = read_advanced_avg(options, average)
-  show_averages(averages2) if options[:show_average]
-  time1  = Time.now
-  thread = options[:do_timer] ? start_timer_thread(color_opts, averages2, options, time1) : nil
+  def calc_new_avg(ind)
+    sum           = @averages2[ind] * @counts[ind] + @diff
+    @counts[ind]   += 1
+    @averages2[ind] = sum / @counts[ind]
+  end
 
-  if options[:live_print]
+  def update_avg
+    unless @options[:block_update]
+      if @options[:command_override].nil? && @options[:track_average] && (@result || !options[:skip_tests])
+
+        if @result || @diff >= @average / 2.0
+          @options[:skip_tests] ? calc_new_avg(0) : calc_new_avg(1)
+          IO.write('avg.txt', "#{@averages2[0]};#{@counts[0]}\n#{@averages2[1]};#{@counts[1]}\n#{@averages2[2]};#{@counts[2]}\n#{@averages2[3]};#{@counts[3]}")
+        end
+      end
+    end
+  end
+
+  def colorize_if_should(text, colors)
+    @options[:colored] ? Format::colorize(text, colors[:fg], colors[:bg]) : text
+  end
+
+  def get_avg_message(amin, asec, avg, diff, m, s)
+    progress = ((diff.to_f / avg.to_f) * 100.0)
+    bars     = [progress.floor, 100].min
+    "[#{'=' * bars}>#{' ' * (100 - bars)}] #{colorize_if_should("#{m}:#{s}", @color_opts[:time])} (#{colorize_if_should("~#{'%.3f' % progress}%", @color_opts[:percent])}) (average: #{colorize_if_should("#{amin}:#{asec}", @color_opts[:average])})"
+  end
+
+  def get_closest(time)
+    @averages.min { |a, b| (a - time).abs <=> (b - time).abs }
+  end
+
+  def get_timer_message(start_time, time)
+    diff       = time - start_time
+    avg        = get_closest(diff)
+    amin, asec = get_time_parts(avg)
+    m, s       = get_time_parts(diff)
+    (avg == 0) ? colorize_if_should("#{m}:#{s}", @color_opts[:time]) : get_avg_message(amin, asec, avg, diff, m, s)
+  end
+
+  def get_time_parts(time)
+    return (time / 60.0).floor, '%06.3f' % (time % 60)
+  end
+
+  INFO_LINE   = '[INFO] ------------------------------------------------------------------------'
+  BUILD_REGEX = /\[INFO\] Building (?!(jar|war|zip))/
+
+  def filter_line(found, info_line_last, l, puts_prefix = '')
+    line = l.chomp
+    begin
+      if @options[:show_projects] && line =~ BUILD_REGEX
+        puts "#{puts_prefix}#{INFO_LINE}" unless info_line_last
+        puts "#{puts_prefix}#{line}"
+        puts "#{puts_prefix}#{INFO_LINE}"
+        info_line_last = true
+      elsif @options[:hide_between] && found && line.start_with?('Tests run:')
+        puts "#{puts_prefix}#{line}\n\n"
+        found          = false
+        info_line_last = false
+      elsif found
+        puts "#{puts_prefix}#{line}"
+        info_line_last = line.start_with?(INFO_LINE)
+      elsif line.start_with_any?('[ERROR] COMPILATION ERROR :', 'Results :')
+        puts "#{puts_prefix}#{line}"
+        found          = true
+        info_line_last = false
+      elsif line.start_with_any?('[INFO] BUILD SUCCESS', '[INFO] Reactor Summary:', '[INFO] BUILD FAILURE')
+        puts "#{puts_prefix}#{INFO_LINE}" unless info_line_last
+        puts "#{puts_prefix}#{line}"
+        found          = true
+        info_line_last = false
+      end
+    rescue
+      puts "#{puts_prefix}#{line}"
+    end
+    return found, info_line_last
+  end
+
+  def output_lines
+    IO.write(@options[:log_file], @output) if @options[:write_log]
     found          = false
     info_line_last = false
-    result         = false
-    begin
-      log_file = options[:write_log] ? File.open(options[:log_file], 'w+') : nil
-      IO.popen(cmd).each do |l|
-        log_file << l unless log_file.nil?
-        found, info_line_last = filter_line(found, info_line_last, l, options, "\r\e[2K")
-        result                = true if l.chomp.start_with?('[INFO] BUILD SUCCESS')
-      end
-    ensure
-      log_file.close unless log_file.nil?
+    if @options[:low_mem]
+      @output.each_line { |l|
+        found, info_line_last = filter_line(found, info_line_last, l, @options)
+      }
+
+      @output.each_line { |line| puts line } unless found
+    else
+      lines = @output.lines.chompall
+      @output.clear
+
+      lines.each { |l|
+        found, info_line_last = filter_line(found, info_line_last, l, @options)
+      }
+
+      lines.each { |line| puts line } unless found
     end
-  else
-    output = `#{cmd}`
-    result = $?.success?
   end
 
-  update_avg(average, averages, counts, options, result, time1)
-  update_full_avg(average, options, result, time1)
-
-  unless thread.nil?
-    thread.kill
-    print "\n"
+  def start_timer_thread
+    Thread.new(@time1) { |start_time|
+      while true
+        print "\r#{get_timer_message(start_time, Time.now)}"
+        sleep(0.05)
+      end
+    }
   end
 
-  if options[:show_average]
-    average, _, _ = read_avg(options)
-    average       = read_full_avg(options, average)
-    averages2     = read_advanced_avg(options, average)
-    show_averages(averages2)
+  def show_averages
+    unless @averages.empty? || (@averages.length == 1 && @averages[0] == 0)
+      strs = @averages.map { |a|
+        m, s = get_time_parts(a)
+        "#{m}:#{s}"
+      }
+      puts "Average(s): #{strs.join(', ')}"
+    end
   end
 
-  output_lines(output, options) unless options[:live_print]
-  result
+  def run_and_filter_output
+    @average, @averages2, @counts = read_avg
+    @average                   = read_full_avg
+    @averages                 = read_advanced_avg
+    show_averages if @options[:show_average]
+    @time1  = Time.now
+    thread = @options[:do_timer] ? start_timer_thread : nil
+
+    if @options[:live_print]
+      found          = false
+      info_line_last = false
+      @result         = false
+      begin
+        log_file = @options[:write_log] ? File.open(@options[:log_file], 'w+') : nil
+        IO.popen(@cmd).each do |l|
+          log_file << l unless log_file.nil?
+          found, info_line_last = filter_line(found, info_line_last, l, "\r\e[2K")
+          @result                = true if l.chomp.start_with?('[INFO] BUILD SUCCESS')
+        end
+      ensure
+        log_file.close unless log_file.nil?
+      end
+    else
+      @output = `#{@cmd}`
+      @result = $?.success?
+    end
+
+    time2 = Time.now
+    @diff  = time2 - @time1
+
+    update_avg
+    update_full_avg
+
+    unless thread.nil?
+      thread.kill
+      print "\n"
+    end
+
+    if @options[:show_average]
+      @average, _, _ = read_avg
+      @average       = read_full_avg
+      @averages     = read_advanced_avg
+      show_averages
+    end
+
+    output_lines unless @options[:live_print]
+  end
+
+  def run_cmd(cmd)
+    unless cmd.nil?
+      puts "$ #{cmd}"
+      `#{cmd}`
+      print "\n"
+    end
+  end
+
+  def run
+    run_cmd(@options[:run_before])
+    @options[:display_all] ? system(@cmd) : run_and_filter_output
+    run_cmd(@options[:run_after])
+    if @result
+      run_cmd(@options[:run_success])
+    else
+      run_cmd(@options[:run_failure])
+    end
+
+    message_text  = "#{(@options[:command_override].nil? ? (@options[:skip_tests] ? 'Build' : 'Tests') : 'Operation')} #{(@result ? 'Successful' : 'Failed')}"
+    message_title = @cmd[0...(-5-HEADLESS.length)]
+
+    unless @options[:mobile_number].nil?
+      begin
+        require 'nexmo'
+      rescue LoadError
+        puts 'You need to run \'gem install nexmo\' to use this feature'
+        exit 1
+      end
+      path = Dir.getwd
+
+      path = path[(path.rindex('/')+1)..-1]
+
+      sms_message = "#{path}: #{message_text}"
+
+      nexmo = Nexmo::Client.new('8c3b6e7d', 'a1d2ac24')
+
+      nexmo.send_message!({ :to => @options[:mobile_number], :from => '13179120742', :text => sms_message })
+    end
+
+    begin
+      `growlnotify -n Terminal -a Terminal#{(@options[:no_sticky] ? '' : ' -s')} -m "#{message_text}" -t "#{message_title}" 2>&1`
+    end until $?.success?
+  end
 end
 
-def run_cmd(cmd)
-  unless cmd.nil?
-    puts "$ #{cmd}"
-    `#{cmd}`
-    print "\n"
-  end
-end
-
-run_cmd(options[:run_before])
-result = options[:display_all] ? system(cmd) : run_and_filter_output(color_opts, options, cmd)
-run_cmd(options[:run_after])
-if result
-  run_cmd(options[:run_success])
-else
-  run_cmd(options[:run_failure])
-end
-
-message_text  = "#{(options[:command_override].nil? ? (options[:skip_tests] ? 'Build' : 'Tests') : 'Operation')} #{(result ? 'Successful' : 'Failed')}"
-message_title = cmd[0...(-5-headless.length)]
-
-unless options[:mobile_number].nil?
-  begin
-    require 'nexmo'
-  rescue
-    puts 'You need to run \'gem install nexmo\' to use this feature'
-    exit 1
-  end
-  path = Dir.getwd
-
-  path = path[(path.rindex('/')+1)..-1]
-
-  sms_message = "#{path}: #{message_text}"
-
-  nexmo = Nexmo::Client.new('8c3b6e7d', 'a1d2ac24')
-
-  nexmo.send_message!({ :to => options[:mobile_number], :from => '13179120742', :text => sms_message })
-end
-
-begin
-  `growlnotify -n Terminal -a Terminal#{(options[:no_sticky] ? '' : ' -s')} -m "#{message_text}" -t "#{message_title}" 2>&1`
-end until $?.success?
+Mvn2.new(options, color_opts).run
