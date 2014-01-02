@@ -27,10 +27,16 @@ options       = {
     show_rank_index:   false,
     threshold:         [],
     positive_negative: false,
+    mobile_number:     nil,
 }
 
-#abcd   hi  l nop rstuvw
-#    efg  jk m   q      xyz
+defaults_file = File.expand_path('~/jrank-defaults.yaml')
+options = YAML::load_file(defaults_file) if File.exist?(defaults_file)
+
+set_defaults = false
+
+#abcd   hi  lmnop rstuvw    1
+#    efg  jk     q      xyz0 23456789
 
 option_parser = OptionParser.new { |opts|
   Option::add_option(options, opts, '-a', '--adjust-scores', :adjust_scores)
@@ -49,9 +55,17 @@ option_parser = OptionParser.new { |opts|
   Option::add_option(options, opts, '-r', '--show-rank-index', :show_rank_index)
   Option::add_option_with_param_and_type_append(options, opts, '-h', '--threshold THRESHOLD', :threshold, Float)
   Option::add_option(options, opts, '-p', '--positive-negative', :positive_negative)
+  Option::add_option_with_param(options, opts, '-m', '--mobile-number NUMBER', :mobile_number)
+  opts.on('-1', '--set-defaults') { set_defaults = true }
 }
 
 option_parser.parse!
+
+if set_defaults
+  IO.write(defaults_file, options.to_yaml)
+  puts 'Defaults set'
+  exit 0
+end
 
 if options[:clear_screen] && !options[:update]
   system('clear')
@@ -113,7 +127,7 @@ def has_change(data, prev_data)
   end
   rval = false
   data.each_with_index { |v, i|
-    v2 = prev_data[i]
+    v2   = prev_data[i]
     rval = true if v2[0] != v[0] || v2[1] != v[1]
   }
   rval
@@ -124,7 +138,7 @@ def read_previous_data(options, fname, fnameb)
   previous_datab = nil
 
   if options[:track_movement] || options[:show_diff]
-    previous_data = YAML::load_file(fname) if File.exist?(fname)
+    previous_data  = YAML::load_file(fname) if File.exist?(fname)
     previous_datab = YAML::load_file(fnameb) if File.exist?(fnameb)
   end
   if options[:no_absolute_value]
@@ -187,9 +201,9 @@ def get_data(options, net, mycurses, datab_any, previous_data)
 
   datab = {}
 
-  avg = data.values.average.round
-  avg2 = previous_data.map {|v| v[1]}.average.round
-  avgd = avg - avg2
+  avg   = data.values.average.round
+  avg2  = previous_data.map { |v| v[1] }.average.round
+  avgd  = avg - avg2
   avgd2 = " (#{avgd == 0 ? avgd : (avgd < 0 ? Format::colorize(avgd, :red) : Format::colorize(avgd, :green))})"
   mycurses.headers << "Average: #{avg}#{options[:show_diff] ? avgd2 : ''}#{calc_extra_avgs(options, data, previous_data)}" if datab_any
   data.keys.each { |k|
@@ -208,21 +222,21 @@ end
 def calc_extra_avgs(options, data, previous_data)
   rval = ''
   if options[:positive_negative]
-    avgp = data.values.select { |i| i >= 0 }.average.round
-    avgp2 = previous_data.map { |v| v[1] }.select { |i| i >= 0 }.average.round
-    avgpd = avgp - avgp2
+    avgp   = data.values.select { |i| i >= 0 }.average.round
+    avgp2  = previous_data.map { |v| v[1] }.select { |i| i >= 0 }.average.round
+    avgpd  = avgp - avgp2
     avgpd2 = " (#{avgpd == 0 ? avgpd : (avgpd < 0 ? Format::colorize(avgpd, :red) : Format::colorize(avgpd, :green))})"
     rval << "    Average (i >= 0): #{avgp}#{options[:show_diff] ? avgpd2 : ''}"
-    avgn = data.values.select { |i| i < 0 }.average.round
-    avgn2 = previous_data.map { |v| v[1] }.select { |i| i < 0 }.average.round
-    avgnd = avgn - avgn2
+    avgn   = data.values.select { |i| i < 0 }.average.round
+    avgn2  = previous_data.map { |v| v[1] }.select { |i| i < 0 }.average.round
+    avgnd  = avgn - avgn2
     avgnd2 = " (#{avgnd == 0 ? avgnd : (avgnd < 0 ? Format::colorize(avgnd, :red) : Format::colorize(avgnd, :green))})"
     rval << "    Average (i < 0): #{avgn}#{options[:show_diff] ? avgnd2 : ''}"
   end
   options[:threshold].each { |v|
-    avg = data.values.select { |i| (options[:no_absolute_value] ? i : i.abs) >= v }.average.round
-    avg2 = previous_data.map { |v2| v2[1] }.select { |i| (options[:no_absolute_value] ? i : i.abs) >= v }.average.round
-    avgd = avg - avg2
+    avg   = data.values.select { |i| (options[:no_absolute_value] ? i : i.abs) >= v }.average.round
+    avg2  = previous_data.map { |v2| v2[1] }.select { |i| (options[:no_absolute_value] ? i : i.abs) >= v }.average.round
+    avgd  = avg - avg2
     avgd2 = " (#{avgd == 0 ? avgd : (avgd < 0 ? Format::colorize(avgd, :red) : Format::colorize(avgd, :green))})"
     rval << "    Average (i#{options[:no_absolute_value] ? '' : '.abs'} >= #{v}): #{avg2}#{options[:show_diff] ? avgd2 : ''}"
   }
@@ -336,7 +350,7 @@ begin
     mycurses.myprints
 
     if options[:update]
-      write_data(data, datab, fname, fnameb, options) if !options[:continuous_update]
+      write_data(data, datab, fname, fnameb, options) unless options[:continuous_update]
       if (options[:wait_on_change] || options[:notify_of_change] || options[:continuous_update]) && (has_change(data, previous_data) || has_change(datab, previous_datab))
         mycurses.footer_live_append('There are changes since the last check. Press ENTER to continue...')
       end

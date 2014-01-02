@@ -42,9 +42,7 @@ options = {
     advanced_text:      false,
 }
 
-if File.exist?('mvn2-defaults.yaml')
-  options = YAML::load_file('mvn2-defaults.yaml')
-end
+options = YAML::load_file('mvn2-defaults.yaml') if File.exist?('mvn2-defaults.yaml')
 
 set_defaults  = false
 #abcd   h jklmn p  stuvw   01
