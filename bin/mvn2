@@ -226,7 +226,7 @@ class Mvn2
 
   def update_avg
     unless @options[:block_update]
-      if @options[:command_override].nil? && @options[:track_average] && (@result || !options[:skip_tests])
+      if @options[:command_override].nil? && @options[:track_average] && (@result || !@options[:skip_tests])
 
         if @result || @diff >= @average / 2.0
           @options[:skip_tests] ? calc_new_avg(0) : calc_new_avg(1)
