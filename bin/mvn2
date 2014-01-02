@@ -130,14 +130,20 @@ end
 
 class Mvn2
   HEADLESS = ' -Djava.awt.headless=true'
+  INFO_LINE   = '[INFO] ------------------------------------------------------------------------'
+  BUILD_REGEX = /\[INFO\] Building (?!(jar|war|zip))/
 
   def initialize(options, color_opts)
     @options    = options
     @color_opts = color_opts
-    st          = @options[:skip_tests] ? ' -D skipTests' : ''
-    cmd2        = @options[:package] ? 'package' : 'install'
-    exc         = @options[:exception] ? ' -e -X' : ''
-    @cmd        = @options[:command_override].nil? ? "mvn clean #{cmd2}#{st}#{exc}#{HEADLESS} 2>&1" : "mvn #{options[:command_override]}#{exc}#{HEADLESS} 2>&1"
+    setup_cmd
+  end
+
+  def setup_cmd
+    st   = @options[:skip_tests] ? ' -D skipTests' : ''
+    cmd2 = @options[:package] ? 'package' : 'install'
+    exc  = @options[:exception] ? ' -e -X' : ''
+    @cmd = @options[:command_override].nil? ? "mvn clean #{cmd2}#{st}#{exc}#{HEADLESS} 2>&1" : "mvn #{@options[:command_override]}#{exc}#{HEADLESS} 2>&1"
   end
 
   def full_avg_file
@@ -145,19 +151,21 @@ class Mvn2
     @options[:skip_tests] ? "avg-skip#{pkg}.txt" : "avg-test#{pkg}.txt"
   end
 
+  def float_filter(line)
+    begin
+      f = line.chomp
+      f.length == 0 || (f =~ /^\d+(\.\d+)?$/).nil? ? false : f.to_f
+    rescue
+      false
+    end
+  end
+
   def read_full_avg
     average   = @average
     file_name = full_avg_file
     if @options[:command_override].nil? && @options[:track_full_average] && File.exist?(file_name)
       lines   = IO.readlines(file_name)
-      data    = lines.filtermap { |line|
-        begin
-          f = line.chomp
-          f.length == 0 || (f =~ /^\d+(\.\d+)?$/).nil? ? false : f.to_f
-        rescue
-          false
-        end
-      }
+      data    = lines.filtermap { |line| float_filter(line) }
       average = data.average
     end
     average
@@ -168,14 +176,7 @@ class Mvn2
     file_name = full_avg_file
     if @options[:command_override].nil? && @options[:track_full_average] && @options[:advanced_average] && File.exist?(file_name)
       lines    = IO.readlines(file_name)
-      data     = lines.filtermap { |line|
-        begin
-          f = line.chomp
-          f.length == 0 || (f =~ /^\d+(\.\d+)?$/).nil? ? false : f.to_f
-        rescue
-          false
-        end
-      }
+      data     = lines.filtermap { |line| float_filter(line) }
       averages = data.nmeans
     end
     averages
@@ -243,7 +244,10 @@ class Mvn2
   def get_avg_message(amin, asec, avg, diff, m, s)
     progress = ((diff.to_f / avg.to_f) * 100.0)
     bars     = [progress.floor, 100].min
-    "[#{'=' * bars}>#{' ' * (100 - bars)}] #{colorize_if_should("#{m}:#{s}", @color_opts[:time])} (#{colorize_if_should("~#{'%.3f' % progress}%", @color_opts[:percent])}) (average: #{colorize_if_should("#{amin}:#{asec}", @color_opts[:average])})"
+    colorized_time = colorize_if_should("#{m}:#{s}", @color_opts[:time])
+    colorized_progress = colorize_if_should("~#{'%.3f' % progress}%", @color_opts[:percent])
+    colorized_average = colorize_if_should("#{amin}:#{asec}", @color_opts[:average])
+    "[#{'=' * bars}>#{' ' * (100 - bars)}] #{colorized_time} (#{colorized_progress}) (average: #{colorized_average})"
   end
 
   def get_closest(time)
@@ -261,9 +265,6 @@ class Mvn2
   def get_time_parts(time)
     return (time / 60.0).floor, '%06.3f' % (time % 60)
   end
-
-  INFO_LINE   = '[INFO] ------------------------------------------------------------------------'
-  BUILD_REGEX = /\[INFO\] Building (?!(jar|war|zip))/
 
   def filter_line(found, info_line_last, l, puts_prefix = '')
     line = l.chomp
@@ -301,18 +302,14 @@ class Mvn2
     found          = false
     info_line_last = false
     if @options[:low_mem]
-      @output.each_line { |l|
-        found, info_line_last = filter_line(found, info_line_last, l, @options)
-      }
+      @output.each_line { |l| found, info_line_last = filter_line(found, info_line_last, l, @options) }
 
       @output.each_line { |line| puts line } unless found
     else
       lines = @output.lines.chompall
       @output.clear
 
-      lines.each { |l|
-        found, info_line_last = filter_line(found, info_line_last, l, @options)
-      }
+      lines.each { |l| found, info_line_last = filter_line(found, info_line_last, l, @options) }
 
       lines.each { |line| puts line } unless found
     end
@@ -397,7 +394,6 @@ class Mvn2
 
     unless thread2.nil?
       thread2.kill
-      print "\n"
     end
 
     if @options[:show_average]
@@ -439,7 +435,6 @@ class Mvn2
         exit 1
       end
       path = Dir.getwd
-
       path = path[(path.rindex('/')+1)..-1]
 
       sms_message = "#{path}: #{message_text}"
