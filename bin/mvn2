@@ -183,7 +183,7 @@ class Mvn2
 
   def update_full_avg
     unless @options[:block_update]
-      @options[:command_override].nil? && @options[:track_full_average] && (@result || !options[:skip_tests])
+      @options[:command_override].nil? && @options[:track_full_average] && (@result || !@options[:skip_tests])
 
       if @result || (!options[:skip_tests] && @diff >= @average / 2.0)
         file = File.new(full_avg_file, 'a+')
