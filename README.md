@@ -9,6 +9,10 @@ This repository is a collection of the shell scripts I have written for my Mac.
 
 ---
 
+**NOTE:** the ticket system has been moved to <https://everydayprogramminggenius.atlassian.net/browse/MSS>.  You should be able to log tickets without an account.
+
+---
+
 Here are the descriptions for the scripts:
 
 * `chmodrd`: recursively change the permissions to the given parameter on all directories within and including the one given
