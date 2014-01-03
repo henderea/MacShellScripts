@@ -333,7 +333,7 @@ time_s     = nil
 
 begin
   begin
-    time_s = time_s.nil? ? Time::now : time_s + options[:update_interval]
+    time_s = (time_s.nil? || (Time::now - time_s) > options[:update_interval]) ? Time::now : time_s + options[:update_interval]
     mycurses.clear
 
     previous_data, previous_datab              = read_previous_data(options, fname, fnameb)
