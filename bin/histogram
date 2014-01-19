@@ -16,10 +16,10 @@ options = {
 }
 
 option_parser = OptionParser.new { |opts|
-  Option::add_option_with_param(options, opts, '-f', '--file FILE', :file)
-  Option::add_option_with_param_and_type(options, opts, '-k', '--k-value KVAL', :k_value, Integer)
-  Option::add_option_with_param_and_type(options, opts, '-w', '--width WIDTH', :width, Integer)
-  Option::add_option_with_param_and_type(options, opts, '-h', '--height HEIGHT', :height, Integer)
+  Option::add_option_with_param(options, opts, ['-f', '--file FILE'], :file)
+  Option::add_option_with_param(options, opts, ['-k', '--k-value KVAL'], :k_value, type: Integer)
+  Option::add_option_with_param(options, opts, ['-w', '--width WIDTH'], :width, type: Integer)
+  Option::add_option_with_param(options, opts, ['-h', '--height HEIGHT'], :height, type: Integer)
 }
 
 option_parser.parse!

@@ -13,8 +13,8 @@ options = {
 }
 
 option_parser = OptionParser.new { |opts|
-  Option::add_option(options, opts, '-e', '--exclude-extension', :exclude_extension)
-  Option::add_option(options, opts, '-v', '--override-colors', :override_colors)
+  Option::add_option(options, opts, %w(-e --exclude-extension), :exclude_extension)
+  Option::add_option(options, opts, %w(-v --override-colors), :override_colors)
 }
 
 option_parser.parse!

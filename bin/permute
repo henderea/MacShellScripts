@@ -14,12 +14,9 @@ options = {
 delimiter_set = false
 
 option_parser = OptionParser.new { |opts|
-  Option::add_option_block(options, opts, '-1', '--one-per-line', :one_per_line) {
-    unless delimiter_set
-      options[:delimiter] = nil
-    end }
-  Option::add_option_with_param_block(options, opts, '-d', '--delimiter [DELIMITER]', :delimiter) { delimiter_set = true }
-  Option::add_option_with_param_and_type(options, opts, '-l', '--length [LENGTH]', :length, Integer)
+  Option::add_option(options, opts, %w(-1 --one-per-line), :one_per_line) { options[:delimiter] = nil unless delimiter_set }
+  Option::add_option_with_param(options, opts, ['-d', '--delimiter [DELIMITER]'], :delimiter) { delimiter_set = true }
+  Option::add_option_with_param(options, opts, ['-l', '--length [LENGTH]'], :length, type: Integer)
 }
 
 option_parser.parse!

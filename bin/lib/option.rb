@@ -1,81 +1,19 @@
-module Option
-  def self.add_option(options, opts, short_name, long_name, opt_name)
-    opts.on(short_name, long_name) { options[opt_name] = true }
+class Option
+  def self.add_option(options, opts, names, opt_name, settings = {})
+    opts.on(*names) {
+      options[opt_name] = !settings[:toggle] || !options[opt_name]
+      yield if block_given?
+    }
   end
 
-  def self.add_option_with_param(options, opts, short_name, long_name, opt_name)
-    opts.on(short_name, long_name) { |param| options[opt_name] = param }
-  end
-
-  def self.add_option_with_param_and_type(options, opts, short_name, long_name, opt_name, type)
-    opts.on(short_name, long_name, type) { |param| options[opt_name] = param }
-  end
-
-  def self.add_option_single(options, opts, name, opt_name)
-    opts.on(name) { options[opt_name] = true }
-  end
-
-  def self.add_option_with_param_single(options, opts, name, opt_name)
-    opts.on(name) { |param| options[opt_name] = param }
-  end
-
-  def self.add_option_with_param_and_type_single(options, opts, name, opt_name, type)
-    opts.on(name, type) { |param| options[opt_name] = param }
-  end
-
-  def self.add_option_block(options, opts, short_name, long_name, opt_name, &block)
-    opts.on(short_name, long_name) { options[opt_name] = true; block.call }
-  end
-
-  def self.add_option_with_param_block(options, opts, short_name, long_name, opt_name, &block)
-    opts.on(short_name, long_name) { |param| options[opt_name] = param; block.call }
-  end
-
-  def self.add_option_with_param_and_type_block(options, opts, short_name, long_name, opt_name, type, &block)
-    opts.on(short_name, long_name, type) { |param| options[opt_name] = param; block.call }
-  end
-
-  def self.add_option_single_block(options, opts, name, opt_name, &block)
-    opts.on(name) { options[opt_name] = true; block.call }
-  end
-
-  def self.add_option_with_param_single_block(options, opts, name, opt_name, &block)
-    opts.on(name) { |param| options[opt_name] = param; block.call }
-  end
-
-  def self.add_option_with_param_and_type_single_block(options, opts, name, opt_name, type, &block)
-    opts.on(name, type) { |param| options[opt_name] = param; block.call }
-  end
-
-  def self.add_option_with_param_append(options, opts, short_name, long_name, opt_name)
-    opts.on(short_name, long_name) { |param| options[opt_name] << param }
-  end
-
-  def self.add_option_with_param_and_type_append(options, opts, short_name, long_name, opt_name, type)
-    opts.on(short_name, long_name, type) { |param| options[opt_name] << param }
-  end
-
-  def self.add_option_with_param_single_append(options, opts, name, opt_name)
-    opts.on(name) { |param| options[opt_name] << param }
-  end
-
-  def self.add_option_with_param_and_type_single_append(options, opts, name, opt_name, type)
-    opts.on(name, type) { |param| options[opt_name] << param }
-  end
-
-  def self.add_option_with_param_block_append(options, opts, short_name, long_name, opt_name, &block)
-    opts.on(short_name, long_name) { |param| options[opt_name] << param; block.call }
-  end
-
-  def self.add_option_with_param_and_type_block_append(options, opts, short_name, long_name, opt_name, type, &block)
-    opts.on(short_name, long_name, type) { |param| options[opt_name] << param; block.call }
-  end
-
-  def self.add_option_with_param_single_block_append(options, opts, name, opt_name, &block)
-    opts.on(name) { |param| options[opt_name] << param; block.call }
-  end
-
-  def self.add_option_with_param_and_type_single_block_append(options, opts, name, opt_name, type, &block)
-    opts.on(name, type) { |param| options[opt_name] << param; block.call }
+  def self.add_option_with_param(options, opts, names, opt_name, settings = {})
+    opts.on(*names, settings[:type] || String) { |param|
+      if settings[:append]
+        options[opt_name] << param
+      else
+        options[opt_name] = param
+      end
+      yield if block_given?
+    }
   end
 end

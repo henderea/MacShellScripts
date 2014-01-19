@@ -10,7 +10,7 @@ require 'lib/option'
 require 'lib/format'
 require 'lib/mycurses'
 
-options       = {
+options = {
     adjust_scores:     false,
     show_both:         false,
     update:            false,
@@ -31,31 +31,31 @@ options       = {
 }
 
 defaults_file = File.expand_path('~/jrank-defaults.yaml')
-options = YAML::load_file(defaults_file) if File.exist?(defaults_file)
+options       = YAML::load_file(defaults_file) if File.exist?(defaults_file)
 
-set_defaults = false
+set_defaults  = false
 
 #abcd   hi  lmnop rstuvw    1
 #    efg  jk     q      xyz0 23456789
 
 option_parser = OptionParser.new { |opts|
-  Option::add_option(options, opts, '-a', '--adjust-scores', :adjust_scores)
-  Option::add_option(options, opts, '-b', '--show-both', :show_both)
-  Option::add_option(options, opts, '-u', '--update', :update)
-  Option::add_option_with_param_and_type(options, opts, '-i', '--update-interval INTERVAL', :update_interval, Float)
-  Option::add_option(options, opts, '-t', '--track-movement', :track_movement)
-  Option::add_option(options, opts, '-c', '--clear-screen', :clear_screen)
-  Option::add_option(options, opts, '-d', '--show-diff', :show_diff)
-  Option::add_option(options, opts, '-w', '--wait-on-change', :wait_on_change)
-  Option::add_option(options, opts, '-n', '--notify-of-change', :notify_of_change)
-  Option::add_option(options, opts, '-s', '--notify-sticky', :notify_sticky)
-  Option::add_option(options, opts, '-o', '--continuous-update', :continuous_update)
-  Option::add_option(options, opts, '-l', '--show-last-updated', :show_last_updated)
-  Option::add_option(options, opts, '-v', '--no-absolute-value', :no_absolute_value)
-  Option::add_option(options, opts, '-r', '--show-rank-index', :show_rank_index)
-  Option::add_option_with_param_and_type_append(options, opts, '-h', '--threshold THRESHOLD', :threshold, Float)
-  Option::add_option(options, opts, '-p', '--positive-negative', :positive_negative)
-  Option::add_option_with_param(options, opts, '-m', '--mobile-number NUMBER', :mobile_number)
+  Option::add_option(options, opts, %w(-a --adjust-scores), :adjust_scores, toggle: true)
+  Option::add_option(options, opts, %w(-b --show-both), :show_both, toggle: true)
+  Option::add_option(options, opts, %w(-u --update), :update, toggle: true)
+  Option::add_option_with_param(options, opts, ['-i', '--update-interval INTERVAL'], :update_interval, type: Float)
+  Option::add_option(options, opts, %w(-t --track-movement), :track_movement, toggle: true)
+  Option::add_option(options, opts, %w(-c --clear-screen), :clear_screen, toggle: true)
+  Option::add_option(options, opts, %w(-d --show-diff), :show_diff, toggle: true)
+  Option::add_option(options, opts, %w(-w --wait-on-change), :wait_on_change, toggle: true)
+  Option::add_option(options, opts, %w(-n --notify-of-change), :notify_of_change, toggle: true)
+  Option::add_option(options, opts, %w(-s --notify-sticky), :notify_sticky, toggle: true)
+  Option::add_option(options, opts, %w(-o --continuous-update), :continuous_update, toggle: true)
+  Option::add_option(options, opts, %w(-l --show-last-updated), :show_last_updated, toggle: true)
+  Option::add_option(options, opts, %w(-v --no-absolute-value), :no_absolute_value, toggle: true)
+  Option::add_option(options, opts, %w(-r --show-rank-index), :show_rank_index, toggle: true)
+  Option::add_option_with_param(options, opts, ['-h', '--threshold THRESHOLD'], :threshold, append: true, type: Float)
+  Option::add_option(options, opts, %w(-p --positive-negative), :positive_negative, toggle: true)
+  Option::add_option_with_param(options, opts, ['-m', '--mobile-number NUMBER'], :mobile_number)
   opts.on('-1', '--set-defaults') { set_defaults = true }
 }
 

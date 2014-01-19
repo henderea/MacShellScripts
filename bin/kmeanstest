@@ -20,14 +20,14 @@ options = {
 }
 
 option_parser = OptionParser.new { |opts|
-  Option::add_option(options, opts, '-2', '--do-two', :do_two)
-  Option::add_option_with_param_and_type(options, opts, '-c', '--count COUNT', :count, Integer)
-  Option::add_option_with_param_and_type(options, opts, '-a', '--min-one MIN', :min1, Integer)
-  Option::add_option_with_param_and_type(options, opts, '-b', '--max-one MAX', :max1, Integer)
-  Option::add_option_with_param_and_type(options, opts, '-d', '--min-two MIN', :min2, Integer)
-  Option::add_option_with_param_and_type(options, opts, '-e', '--max-two MAX', :max2, Integer)
-  Option::add_option_with_param_and_type(options, opts, '-w', '--width WIDTH', :width, Integer)
-  Option::add_option_with_param_and_type(options, opts, '-h', '--height HEIGHT', :height, Integer)
+  Option::add_option(options, opts, %w(-2 --do-two), :do_two)
+  Option::add_option_with_param(options, opts, ['-c', '--count COUNT'], :count, type: Integer)
+  Option::add_option_with_param(options, opts, ['-a', '--min-one MIN'], :min1, type: Integer)
+  Option::add_option_with_param(options, opts, ['-b', '--max-one MAX'], :max1, type: Integer)
+  Option::add_option_with_param(options, opts, ['-d', '--min-two MIN'], :min2, type: Integer)
+  Option::add_option_with_param(options, opts, ['-e', '--max-two MAX'], :max2, type: Integer)
+  Option::add_option_with_param(options, opts, ['-w', '--width WIDTH'], :width, type: Integer)
+  Option::add_option_with_param(options, opts, ['-h', '--height HEIGHT'], :height, type: Integer)
 }
 
 option_parser.parse!

@@ -16,17 +16,9 @@ options = {
 delimiter_set = false
 
 option_parser = OptionParser.new { |opts|
-  Option::add_option_with_param(options, opts, '-f', '--file FILE', :file)
-  opts.on('-1', '--one-per-line') do
-    options[:one_per_line] = true
-    unless delimiter_set
-      options[:delimiter] = nil
-    end
-  end
-  opts.on('-d', '--delimiter [DELIMITER]') do |delim|
-    options[:delimiter] = delim
-    delimiter_set       = true
-  end
+  Option::add_option_with_param(options, opts, ['-f', '--file FILE'], :file)
+  Option::add_option(options, opts, %w(-1 --one-per-line), :one_per_line) { options[:delimiter] = nil unless delimiter_set }
+  Option::add_option_with_param(options, opts, ['-d', '--delimiter [DELIMITER]'], :delimiter) { delimiter_set = true }
 }
 
 option_parser.parse!
