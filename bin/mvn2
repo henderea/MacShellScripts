@@ -300,14 +300,14 @@ class Mvn2
     found          = false
     info_line_last = false
     if @options[:low_mem]
-      @output.each_line { |l| found, info_line_last = filter_line(found, info_line_last, l, @options) }
+      @output.each_line { |l| found, info_line_last = filter_line(found, info_line_last, l) }
 
       @output.each_line { |line| puts line } unless found
     else
       lines = @output.lines.chompall
       @output.clear
 
-      lines.each { |l| found, info_line_last = filter_line(found, info_line_last, l, @options) }
+      lines.each { |l| found, info_line_last = filter_line(found, info_line_last, l) }
 
       lines.each { |line| puts line } unless found
     end
