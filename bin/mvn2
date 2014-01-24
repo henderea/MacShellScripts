@@ -6,13 +6,14 @@ require 'optparse'
 require 'yaml'
 require 'net/http'
 require 'rubygems'
+UTIL_VERSION = '>= 0.3.0'
 begin
-  require 'everyday-cli-utils'
+  gem 'everyday-cli-utils', UTIL_VERSION
   include EverydayCliUtils
   import :maputil, :format, :kmeans, :option
 rescue Exception => e
   puts e
-  puts 'You need to install my everyday-cli-utils gem to use this script.'
+  puts "You need to install my everyday-cli-utils gem version #{UTIL_VERSION} to use this script."
   exit 1
 end
 
@@ -20,33 +21,39 @@ WEB_DOMAIN = 'enigmatic-bayou-2042.herokuapp.com'
 BASE_PATH  = '/mvn2/'
 
 options = {
-    do_timer:           false,
-    skip_tests:         false,
-    no_sticky:          false,
-    display_all:        false,
-    track_average:      false,
-    track_full_average: false,
-    colored:            false,
-    write_log:          false,
-    log_file:           'build.log',
-    advanced_average:   false,
-    command_override:   nil,
-    package:            false,
-    hide_between:       false,
-    show_average:       false,
-    block_update:       false,
-    override_colors:    false,
-    show_projects:      false,
-    run_before:         nil,
-    run_after:          nil,
-    run_success:        nil,
-    run_failure:        nil,
-    low_mem:            false,
-    exception:          false,
-    live_print:         false,
-    mobile_number:      nil,
-    advanced_text:      false,
-}
+    [
+        :do_timer,
+        :skip_tests,
+        :no_sticky,
+        :display_all,
+        :track_average,
+        :track_full_average,
+        :colored,
+        :write_log,
+        :advanced_average,
+        :package,
+        :hide_between,
+        :show_average,
+        :block_update,
+        :override_colors,
+        :show_projects,
+        :low_mem,
+        :exception,
+        :live_print,
+        :advanced_text
+    ]         => false,
+
+    log_file: 'build.log',
+
+    [
+        :command_override,
+        :run_before,
+        :run_after,
+        :run_success,
+        :run_failure,
+        :mobile_number
+    ]         => nil,
+}.expand
 
 options = YAML::load_file('mvn2-defaults.yaml') if File.exist?('mvn2-defaults.yaml')
 
