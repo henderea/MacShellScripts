@@ -5,17 +5,24 @@
 require 'optparse'
 require 'yaml'
 require 'rubygems'
+#begin
+#  require 'everyday-cli-utils'
+#  include EverydayCliUtils
+#  import :format, :option
+#rescue Exception => e
+#  puts 'You need to install my everyday-cli-utils gem to use this script.'
+#  exit 1
+#end
+UTIL_VERSION = '>= 0.4.0'
 begin
+  gem 'everyday-cli-utils', UTIL_VERSION
   require 'everyday-cli-utils'
   include EverydayCliUtils
   import :format, :option
 rescue Exception => e
-  puts e
-  puts 'You need to install my everyday-cli-utils gem to use this script.'
+  puts "You need to install my everyday-cli-utils gem version #{UTIL_VERSION} to use this script."
   exit 1
 end
-#require 'lib/format'
-#require 'lib/option'
 
 options = {
     exclude_extension: false,
@@ -53,24 +60,24 @@ end
 pattern = ARGV.shift
 if pattern == 'help' || pattern == '--help' || pattern == '-h'
   puts 'NAME'.format_bold
-  puts "    #{'mvr'.format_bold_fg_purple} -- Renames a group of files and/or folders using a regular expression\n\n"
+  puts "    {mvr}(bdfpu) -- Renames a group of files and/or folders using a regular expression\n\n".format_all
   puts 'SYNOPSIS'.format_bold
-  puts "    #{'mvr'.format_bold_fg_purple} <#{'find'.format_underline_fg_cyan}> <#{'replace'.format_underline_fg_cyan}> #{'file ...'.format_fg_cyan}\n\n"
+  puts "    {mvr}(bdfpu) <{find}(ulfcy)> <{replace}(ulfcy)> {file ...}(fcy)\n\n".format_all
   puts 'DESCRIPTION'.format_bold
-  puts "    #{'mvr'.format_bold_fg_purple} is a Ruby script that allows you to rename a group of files and/or folders using a regular expression."
-  puts "    The #{'find'.format_underline_fg_cyan} parameter uses normal regular expression syntax (there might be Ruby-specific things, but I doubt it)."
-  puts "    The #{'replace'.format_underline_fg_cyan} parameter is plain text, using #{'\\#'.format_fg_green} to insert capture group #{'#'.format_fg_green} (so #{'\\1'.format_fg_green} to insert the first capture group)."
+  puts '    {mvr}(bdfpu) is a Ruby script that allows you to rename a group of files and/or folders using a regular expression.'.format_all
+  puts '    The {find}(ulfcy) parameter uses normal regular expression syntax (there might be Ruby-specific things, but I doubt it).'.format_all
+  puts "    The {replace}(ulfcy) parameter is plain text, using {\\#}(fgr) to insert capture group {#}(fgr) (so {\\1}(fgr) to insert the first capture group).".format_all
   puts '    The list of files can be as many items as you want, and you can use typical wildcard expressions.'
-  puts "    Any parameter after #{'replace'.format_underline_fg_cyan} will be interpreted as a file/folder name that should be included in the list of what to rename.\n\n"
+  puts "    Any parameter after {replace}(ulfcy) will be interpreted as a file/folder name that should be included in the list of what to rename.\n\n".format_all
   puts '    Parameters:'
-  puts "    <#{'find'.format_underline_fg_cyan}>     The regular expression for the renaming"
-  puts "    <#{'replace'.format_underline_fg_cyan}>  The text to replace what the regular expression matches (use #{'\\#'.format_fg_green} to insert capture group #{'#'.format_fg_green} (so #{'\\1'.format_fg_green} to insert the first capture group))"
-  puts "    #{'file ...'.format_fg_cyan}   The list of files and/or folders to rename"
+  puts '    <{find}(ulfcy)>     The regular expression for the renaming'.format_all
+  puts "    <{replace}(ulfcy)>  The text to replace what the regular expression matches (use {\\#}(fgr) to insert capture group {#}(fgr) (so {\\1}(fgr) to insert the first capture group))".format_all
+  puts '    {file ...}(fcy)   The list of files and/or folders to rename'.format_all
   exit
 end
 if ARGV.length < 2
-  puts "\n#{'Usage'.format_bold_underline}: #{'mvr'.format_bold_fg_purple} <#{'find'.format_underline_fg_cyan}> <#{'replace'.format_underline_fg_cyan}> #{'file ...'.format_fg_cyan}\n\n"
-  puts "Run #{'mvr'.format_bold_fg_purple} #{'help'.format_bold_fg_cyan} for command information.  There is also a man page that should be accessible via #{'man'.format_bold_fg_purple} #{'mvr'.format_bold_fg_cyan}\n\n"
+  puts "\n{Usage}(bdul): {mvr}(bdfpu) <{find}(ulfcy)> <{replace}(ulfcy)> {file ...}(fcy)\n\n".format_all
+  puts "Run {mvr}(bdfpu) {help}(bdfcy) for command information.  There is also a man page that should be accessible via {man}(bdfpu) {mvr}(bdfcy)\n\n".format_all
   exit
 end
 replacement = ARGV.shift
