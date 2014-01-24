@@ -1,11 +1,17 @@
 #!/usr/bin/env ruby
 
-$LOAD_PATH << File.dirname(__FILE__)
-
 require 'yaml'
 require 'readline'
-require 'lib/maputil'
-require 'lib/ask'
+require 'rubygems'
+begin
+  require 'everyday-cli-utils'
+  include EverydayCliUtils
+  import :maputil, :ask
+rescue Exception => e
+  puts e
+  puts 'You need to install my everyday-cli-utils gem to use this script.'
+  exit 1
+end
 
 config_files = {
     mvn2: '~/mvn2-colors.yaml',

@@ -1,11 +1,21 @@
 #!/usr/bin/env ruby
 
-$LOAD_PATH << File.dirname(__FILE__)
+#$LOAD_PATH << File.dirname(__FILE__)
 
 require 'optparse'
 require 'yaml'
-require 'lib/format'
-require 'lib/option'
+require 'rubygems'
+begin
+  require 'everyday-cli-utils'
+  include EverydayCliUtils
+  import :format, :option
+rescue Exception => e
+  puts e
+  puts 'You need to install my everyday-cli-utils gem to use this script.'
+  exit 1
+end
+#require 'lib/format'
+#require 'lib/option'
 
 options = {
     exclude_extension: false,
@@ -42,25 +52,25 @@ end
 
 pattern = ARGV.shift
 if pattern == 'help' || pattern == '--help' || pattern == '-h'
-  puts Format::bold('NAME')
-  puts "    #{Format::bold('mvr', :purple)} -- Renames a group of files and/or folders using a regular expression\n\n"
-  puts Format::bold('SYNOPSIS')
-  puts "    #{Format::bold('mvr', :purple)} <#{Format::underline('find', :cyan)}> <#{Format::underline('replace', :cyan)}> #{Format::colorize('file ...', :cyan)}\n\n"
-  puts Format::bold('DESCRIPTION')
-  puts "    #{Format::bold('mvr', :purple)} is a Ruby script that allows you to rename a group of files and/or folders using a regular expression."
-  puts "    The #{Format::underline('find', :cyan)} parameter uses normal regular expression syntax (there might be Ruby-specific things, but I doubt it)."
-  puts "    The #{Format::underline('replace', :cyan)} parameter is plain text, using #{Format::colorize('\\#', :green)} to insert capture group #{Format::colorize('#', :green)} (so #{Format::colorize('\\1', :green)} to insert the first capture group)."
+  puts 'NAME'.format_bold
+  puts "    #{'mvr'.format_bold_fg_purple} -- Renames a group of files and/or folders using a regular expression\n\n"
+  puts 'SYNOPSIS'.format_bold
+  puts "    #{'mvr'.format_bold_fg_purple} <#{'find'.format_underline_fg_cyan}> <#{'replace'.format_underline_fg_cyan}> #{'file ...'.format_fg_cyan}\n\n"
+  puts 'DESCRIPTION'.format_bold
+  puts "    #{'mvr'.format_bold_fg_purple} is a Ruby script that allows you to rename a group of files and/or folders using a regular expression."
+  puts "    The #{'find'.format_underline_fg_cyan} parameter uses normal regular expression syntax (there might be Ruby-specific things, but I doubt it)."
+  puts "    The #{'replace'.format_underline_fg_cyan} parameter is plain text, using #{'\\#'.format_fg_green} to insert capture group #{'#'.format_fg_green} (so #{'\\1'.format_fg_green} to insert the first capture group)."
   puts '    The list of files can be as many items as you want, and you can use typical wildcard expressions.'
-  puts "    Any parameter after #{Format::underline('replace', :cyan)} will be interpreted as a file/folder name that should be included in the list of what to rename.\n\n"
+  puts "    Any parameter after #{'replace'.format_underline_fg_cyan} will be interpreted as a file/folder name that should be included in the list of what to rename.\n\n"
   puts '    Parameters:'
-  puts "    <#{Format::underline('find', :cyan)}>     The regular expression for the renaming"
-  puts "    <#{Format::underline('replace', :cyan)}>  The text to replace what the regular expression matches (use #{Format::colorize('\\#', :green)} to insert capture group #{Format::colorize('#', :green)} (so #{Format::colorize('\\1', :green)} to insert the first capture group))"
-  puts "    #{Format::colorize('file ...', :cyan)}   The list of files and/or folders to rename"
+  puts "    <#{'find'.format_underline_fg_cyan}>     The regular expression for the renaming"
+  puts "    <#{'replace'.format_underline_fg_cyan}>  The text to replace what the regular expression matches (use #{'\\#'.format_fg_green} to insert capture group #{'#'.format_fg_green} (so #{'\\1'.format_fg_green} to insert the first capture group))"
+  puts "    #{'file ...'.format_fg_cyan}   The list of files and/or folders to rename"
   exit
 end
 if ARGV.length < 2
-  puts "\n#{Format::boldunderline('Usage')}: #{Format::bold('mvr', :purple)} <#{Format::underline('find', :cyan)}> <#{Format::underline('replace', :cyan)}> #{Format::colorize('file ...', :cyan)}\n\n"
-  puts "Run #{Format::bold('mvr', :purple)} #{Format::bold('help', :cyan)} for command information.  There is also a man page that should be accessible via #{Format::bold('man', :purple)} #{Format::bold('mvr', :cyan)}\n\n"
+  puts "\n#{'Usage'.format_bold_underline}: #{'mvr'.format_bold_fg_purple} <#{'find'.format_underline_fg_cyan}> <#{'replace'.format_underline_fg_cyan}> #{'file ...'.format_fg_cyan}\n\n"
+  puts "Run #{'mvr'.format_bold_fg_purple} #{'help'.format_bold_fg_cyan} for command information.  There is also a man page that should be accessible via #{'man'.format_bold_fg_purple} #{'mvr'.format_bold_fg_cyan}\n\n"
   exit
 end
 replacement = ARGV.shift

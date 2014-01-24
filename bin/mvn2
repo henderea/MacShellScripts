@@ -5,10 +5,16 @@ $LOAD_PATH << File.dirname(__FILE__)
 require 'optparse'
 require 'yaml'
 require 'net/http'
-require 'lib/maputil'
-require 'lib/format'
-require 'lib/kmeans'
-require 'lib/option'
+require 'rubygems'
+begin
+  require 'everyday-cli-utils'
+  include EverydayCliUtils
+  import :maputil, :format, :kmeans, :option
+rescue Exception => e
+  puts e
+  puts 'You need to install my everyday-cli-utils gem to use this script.'
+  exit 1
+end
 
 WEB_DOMAIN = 'enigmatic-bayou-2042.herokuapp.com'
 BASE_PATH  = '/mvn2/'
