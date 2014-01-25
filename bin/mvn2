@@ -6,7 +6,7 @@ require 'optparse'
 require 'yaml'
 require 'net/http'
 require 'rubygems'
-UTIL_VERSION = '>= 0.3.0'
+UTIL_VERSION = '>= 0.6.0'
 begin
   gem 'everyday-cli-utils', UTIL_VERSION
   require 'everyday-cli-utils'
@@ -20,77 +20,52 @@ end
 WEB_DOMAIN = 'enigmatic-bayou-2042.herokuapp.com'
 BASE_PATH  = '/mvn2/'
 
-options = {
-    [
-        :do_timer,
-        :skip_tests,
-        :no_sticky,
-        :display_all,
-        :track_average,
-        :track_full_average,
-        :colored,
-        :write_log,
-        :advanced_average,
-        :package,
-        :hide_between,
-        :show_average,
-        :block_update,
-        :override_colors,
-        :show_projects,
-        :low_mem,
-        :exception,
-        :live_print,
-        :advanced_text
-    ]         => false,
+default_options = File.exist?('mvn2-defaults.yaml') ? YAML::load_file('mvn2-defaults.yaml') : { log_file: 'build.log' }
 
-    log_file: 'build.log',
-
-    [
-        :command_override,
-        :run_before,
-        :run_after,
-        :run_success,
-        :run_failure,
-        :mobile_number
-    ]         => nil,
-}.expand
-
-options = YAML::load_file('mvn2-defaults.yaml') if File.exist?('mvn2-defaults.yaml')
-
-set_defaults  = false
+set_defaults = false
 #abcd   h jklmn p  stuvw   01
 #    efg i     o qr     xyz  23456789
-option_parser = OptionParser.new { |opts|
-  Option::add_option(options, opts, %w(-t --timer), :do_timer, toggle: true)
-  Option::add_option(options, opts, %w(-s --skip-tests), :skip_tests, toggle: true)
-  Option::add_option(options, opts, %w(-n --no-sticky), :no_sticky, toggle: true)
-  Option::add_option(options, opts, %w(-a --display-all), :display_all, toggle: true)
-  Option::add_option(options, opts, %w(-k --track-average), :track_average, toggle: true)
-  Option::add_option(options, opts, %w(-u --track-full-average), :track_full_average, toggle: true)
-  Option::add_option(options, opts, %w(-c --colored), :colored, toggle: true)
-  Option::add_option(options, opts, %w(-l --write-log), :write_log, toggle: true)
-  Option::add_option_with_param(options, opts, ['--log-file NAME'], :log_file)
-  Option::add_option(options, opts, %w(-d --advanced-average), :advanced_average, toggle: true)
-  Option::add_option_with_param(options, opts, ['--command-override CMD'], :command_override)
-  Option::add_option(options, opts, %w(-p --package), :package, toggle: true)
-  Option::add_option(options, opts, %w(-h --hide-between), :hide_between, toggle: true)
-  Option::add_option(options, opts, %w(-w --show-average), :show_average, toggle: true)
-  Option::add_option(options, opts, %w(-b --block-update), :block_update, toggle: true)
-  Option::add_option(options, opts, %w(-v --override-colors), :override_colors, toggle: true)
-  Option::add_option(options, opts, %w(-j --show-projects), :show_projects, toggle: true)
-  Option::add_option_with_param(options, opts, ['--run-before CMD'], :run_before)
-  Option::add_option_with_param(options, opts, ['--run-after CMD'], :run_after)
-  Option::add_option_with_param(options, opts, ['--run-success CMD'], :run_success)
-  Option::add_option_with_param(options, opts, ['--run-failure CMD'], :run_failure)
-  Option::add_option(options, opts, %w(-m --low-mem), :low_mem, toggle: true)
-  Option::add_option(options, opts, %w(-e --exception), :exception, toggle: true)
-  Option::add_option(options, opts, %w(-0 --live-print), :live_print, toggle: true)
-  Option::add_option_with_param(options, opts, ['--mobile-number NUM'], :mobile_number)
-  Option::add_option(options, opts, %w(-2 --advanced-text), :advanced_text, toggle: true)
-  opts.on('-1', '--set-defaults') { set_defaults = true }
-}
 
-option_parser.parse!
+class MyOptions
+  extend OptionUtil
+
+  default_settings toggle: true
+
+  option :do_timer, %w(-t --timer)
+  option :skip_tests, %w(-s --skip-tests)
+  option :no_sticky, %w(-n --no-sticky)
+  option :display_all, %w(-a --display-all)
+  option :track_average, %w(-k --track-average)
+  option :track_full_average, %w(-u --track-full-average)
+  option :colored, %w(-c --colored)
+  option :write_log, %w(-l --write-log)
+  option_with_param :log_file, ['--log-file NAME']
+  option :advanced_average, %w(-d --advanced-average)
+  option_with_param :command_override, ['--command-override CMD']
+  option :package, %w(-p --package)
+  option :hide_between, %w(-h --hide-between)
+  option :show_average, %w(-w --show-average)
+  option :block_update, %w(-b --block-update)
+  option :override_colors, %w(-v --override-colors)
+  option :show_projects, %w(-j --show-projects)
+  option_with_param :run_before, ['--run-before CMD']
+  option_with_param :run_after, ['--run-after CMD']
+  option_with_param :run_success, ['--run-success CMD']
+  option_with_param :run_failure, ['--run-failure CMD']
+  option :low_mem, %w(-m --low-mem)
+  option :exception, %w(-e --exception)
+  option :live_print, %w(-0 --live-print)
+  option_with_param :mobile_number, ['--mobile-number NUM']
+  option :advanced_text, %w(-2 --advanced-text)
+end
+
+MyOptions.opts.on('-1', '--set-defaults') { set_defaults = true }
+
+MyOptions.default_options default_options
+
+MyOptions.parse!
+
+options = MyOptions.options
 
 if set_defaults
   IO.write('mvn2-defaults.yaml', options.to_yaml)
