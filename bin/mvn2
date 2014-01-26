@@ -4,7 +4,7 @@ require 'optparse'
 require 'yaml'
 require 'net/http'
 require 'rubygems'
-UTIL_VERSION = '>= 0.6.0'
+UTIL_VERSION = '>= 0.7.0'
 begin
   gem 'everyday-cli-utils', UTIL_VERSION
   require 'everyday-cli-utils'
@@ -15,12 +15,11 @@ rescue
   exit 1
 end
 
-WEB_DOMAIN = 'enigmatic-bayou-2042.herokuapp.com'
-BASE_PATH  = '/mvn2/'
+WEB_DOMAIN      = 'enigmatic-bayou-2042.herokuapp.com'
+BASE_PATH       = '/mvn2/'
 
-default_options = File.exist?('mvn2-defaults.yaml') ? YAML::load_file('mvn2-defaults.yaml') : { log_file: 'build.log' }
+default_options = { log_file: 'build.log' }
 
-set_defaults = false
 #abcd   h jklmn p  stuvw   01
 #    efg i     o qr     xyz  23456789
 
@@ -28,6 +27,8 @@ class MyOptions
   extend OptionUtil
 
   default_settings toggle: true
+
+  defaults_option 'mvn2-defaults.yaml', %w(-1 --set-defaults)
 
   option :do_timer, %w(-t --timer)
   option :skip_tests, %w(-s --skip-tests)
@@ -57,19 +58,11 @@ class MyOptions
   option :advanced_text, %w(-2 --advanced-text)
 end
 
-MyOptions.opts.on('-1', '--set-defaults') { set_defaults = true }
-
 MyOptions.default_options default_options
 
 MyOptions.parse!
 
 options = MyOptions.options
-
-if set_defaults
-  IO.write('mvn2-defaults.yaml', options.to_yaml)
-  puts 'Defaults set'
-  exit 0
-end
 
 Signal.trap('SIGINT') {
   puts "\nBuild Canceled\n\n"

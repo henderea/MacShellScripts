@@ -4,7 +4,7 @@ require 'optparse'
 require 'net/http'
 require 'yaml'
 require 'rubygems'
-UTIL_VERSION = '>= 0.6.0'
+UTIL_VERSION = '>= 0.7.0'
 begin
   gem 'everyday-cli-utils', UTIL_VERSION
   require 'everyday-cli-utils'
@@ -15,10 +15,7 @@ rescue
   exit 1
 end
 
-defaults_file   = File.expand_path('~/jrank-defaults.yaml')
-default_options = File.exist?(defaults_file) ? YAML::load_file(defaults_file) : { update_interval: 60 }
-
-set_defaults = false
+default_options = { update_interval: 60 }
 
 #abcd   hi  lmnop rstuvw    1
 #    efg  jk     q      xyz0 23456789
@@ -27,6 +24,9 @@ class MyOptions
   extend OptionUtil
 
   default_settings toggle: true, type: Float
+
+  defaults_option '~/jrank-defaults.yaml', %w(-1 --set-defaults)
+
   option :adjust_scores, %w(-a --adjust-scores)
   option :show_both, %w(-b --show-both)
   option :update, %w(-u --update)
@@ -45,19 +45,11 @@ class MyOptions
   option :positive_negative, %w(-p --positive-negative)
 end
 
-MyOptions.opts.on('-1', '--set-defaults') { set_defaults = true }
-
 MyOptions.default_options default_options
 
 MyOptions.parse!
 
 options = MyOptions.options
-
-if set_defaults
-  IO.write(defaults_file, options.to_yaml)
-  puts 'Defaults set'
-  exit 0
-end
 
 if options[:clear_screen] && !options[:update]
   system('clear')
@@ -133,6 +125,7 @@ def read_previous_data(options, fname, fnameb)
     previous_data  = YAML::load_file(fname) if File.exist?(fname)
     previous_datab = YAML::load_file(fnameb) if File.exist?(fnameb)
   end
+  return if previous_data.nil? && previous_datab.nil?
   if options[:no_absolute_value]
     previous_data  = previous_data.sort_by { |k, v| [-v, k] }
     previous_datab = previous_datab.sort_by { |k, v| [-v, k] }
@@ -194,7 +187,7 @@ def get_data(options, net, mycurses, datab_any, previous_data)
   datab = {}
 
   avg   = data.values.average.round
-  avg2  = previous_data.map { |v| v[1] }.average.round
+  avg2  = previous_data.nil? ? 0 : previous_data.map { |v| v[1] }.average.round
   avgd  = avg - avg2
   avgd2 = " (#{avgd == 0 ? avgd : (avgd < 0 ? Format::colorize(avgd, :red) : Format::colorize(avgd, :green))})"
   mycurses.headers << "Average: #{avg}#{options[:show_diff] ? avgd2 : ''}#{calc_extra_avgs(options, data, previous_data)}" if datab_any
