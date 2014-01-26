@@ -4,7 +4,7 @@ require 'optparse'
 require 'yaml'
 require 'net/http'
 require 'rubygems'
-UTIL_VERSION = '>= 0.7.0'
+UTIL_VERSION = '>= 1.0.0'
 begin
   gem 'everyday-cli-utils', UTIL_VERSION
   require 'everyday-cli-utils'
@@ -15,8 +15,8 @@ rescue
   exit 1
 end
 
-WEB_DOMAIN      = 'enigmatic-bayou-2042.herokuapp.com'
-BASE_PATH       = '/mvn2/'
+WEB_DOMAIN = 'enigmatic-bayou-2042.herokuapp.com'
+BASE_PATH  = '/mvn2/'
 
 default_options = { log_file: 'build.log' }
 
@@ -28,34 +28,36 @@ class MyOptions
 
   default_settings toggle: true
 
-  defaults_option 'mvn2-defaults.yaml', %w(-1 --set-defaults)
+  defaults_option 'mvn2-defaults.yaml', %w(-1 --set-defaults), desc: 'set the defaults so you can just run mvn2 without any parameters (local to each folder)'
 
-  option :do_timer, %w(-t --timer)
-  option :skip_tests, %w(-s --skip-tests)
-  option :no_sticky, %w(-n --no-sticky)
-  option :display_all, %w(-a --display-all)
-  option :track_average, %w(-k --track-average)
-  option :track_full_average, %w(-u --track-full-average)
-  option :colored, %w(-c --colored)
-  option :write_log, %w(-l --write-log)
-  option_with_param :log_file, ['--log-file NAME']
-  option :advanced_average, %w(-d --advanced-average)
-  option_with_param :command_override, ['--command-override CMD']
-  option :package, %w(-p --package)
-  option :hide_between, %w(-h --hide-between)
-  option :show_average, %w(-w --show-average)
-  option :block_update, %w(-b --block-update)
-  option :override_colors, %w(-v --override-colors)
-  option :show_projects, %w(-j --show-projects)
-  option_with_param :run_before, ['--run-before CMD']
-  option_with_param :run_after, ['--run-after CMD']
-  option_with_param :run_success, ['--run-success CMD']
-  option_with_param :run_failure, ['--run-failure CMD']
-  option :low_mem, %w(-m --low-mem)
-  option :exception, %w(-e --exception)
-  option :live_print, %w(-0 --live-print)
-  option_with_param :mobile_number, ['--mobile-number NUM']
-  option :advanced_text, %w(-2 --advanced-text)
+  help_option ['--help'], desc: 'print out this help'
+
+  option :do_timer, %w(-t --timer), desc: 'display a timer while the build is in progress'
+  option :skip_tests, %w(-s --skip-tests), desc: 'skip tests'
+  option :no_sticky, %w(-n --no-sticky), desc: 'make the growl notification non-sticky'
+  option :display_all, %w(-a --display-all), desc: 'display all output'
+  option :track_average, %w(-k --track-average), desc: 'update the average and also display a progress bar while the build is in progress'
+  option :track_full_average, %w(-u --track-full-average), desc: 'update the average list and also display a progress bar while the build is in progress'
+  option :colored, %w(-c --colored), desc: 'display some colors in the timer/progress message'
+  option :write_log, %w(-l --write-log), desc: 'write all of the output to a log file'
+  option_with_param :log_file, ['--log-file'], desc: 'set the log file name'
+  option :advanced_average, %w(-d --advanced-average), desc: 'use k-means (with minimum optimal k) to find a list of averages and use the closest one for the progress bar and displayed average'
+  option_with_param :command_override, ['--command-override'], desc: 'override the maven command (disables average tracking options and skip test option)'
+  option :package, %w(-p --package), desc: 'run "mvn clean package" (with optional "-D skipTests")'
+  option :hide_between, %w(-h --hide-between), desc: 'hide the output between the end of test results (the line starting with "Tests run:") and the next trigger line'
+  option :show_average, %w(-w --show-average), desc: 'show the average(s) before and after the build (average tracking must be enabled)'
+  option :block_update, %w(-b --block-update), desc: 'block the average feature from updating the file(s)'
+  option :override_colors, %w(-v --override-colors), desc: 'override the colors with the ones configured by the colorconfig script'
+  option :show_projects, %w(-j --show-projects), desc: 'show the "Building <project>" lines when outputting'
+  option_with_param :run_before, ['--run-before'], desc: 'run a command before calling the maven build'
+  option_with_param :run_after, ['--run-after'], desc: 'run a command after finishing the maven build'
+  option_with_param :run_success, ['--run-success'], desc: 'run a command after finishing a successful maven build'
+  option_with_param :run_failure, ['--run-failure'], desc: 'run a command after finishing an unsuccessful maven build'
+  option :low_mem, %w(-m --low-mem), desc: 'use a lower memory footprint method of looping through the output'
+  option :exception, %w(-e --exception), desc: 'add the "-e -X" options to the mvn call'
+  option :live_print, %w(-0 --live-print), desc: 'print filtered lines as they are outputted by maven'
+  option_with_param :mobile_number, ['--mobile-number'], desc: 'use the mobile number `NUM` (with country code and nothing other than digits) (country code for US is 1) as the recipient of a text message indicating the success or failure of a build and the name of the immediate folder of the build (requires gem nexmo)'
+  option :advanced_text, %w(-2 --advanced-text), desc: 'upload the folder name, build time so far, and estimated percent complete (based on stored averages) to a server so that you can text 13179120742 (the number you get the build completion texts from) to get the status(es) of your ongoing build(s).  If you send the exact name of the folder (case-sensitive, only 1 at a time), it will only reply with entries matching that build.  If you text anything that does not exactly match a folder name, it will simply reply with all of the ongoing build statuses.  It identifies your builds by your mobile number, so make sure you\'re texting from the number you used as the parameter to the `--mobile-number NUM` option.'
 end
 
 MyOptions.default_options default_options

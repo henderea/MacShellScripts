@@ -63,15 +63,6 @@ Signal.trap('SIGINT') {
   exit 1
 }
 
-class String
-  def mycenter(len)
-    tlen = gsub(%r{\e\[.*?m}, '').length
-    b    = ((len - tlen) / 2.0).floor
-    a    = len - tlen - b
-    "#{' ' * b}#{self}#{' ' * a}"
-  end
-end
-
 def make_line(str0, str1, str0b, str2, datab_any, datab_only, data_both, joinstr = '|')
   vals = [datab_any ? str0b : str0]
   vals << str2 if datab_any
