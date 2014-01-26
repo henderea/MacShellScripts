@@ -1,7 +1,5 @@
 #!/usr/bin/env ruby
 
-$LOAD_PATH << File.dirname(__FILE__)
-
 require 'optparse'
 require 'yaml'
 require 'net/http'
@@ -12,7 +10,7 @@ begin
   require 'everyday-cli-utils'
   include EverydayCliUtils
   import :maputil, :format, :kmeans, :option
-rescue Exception => e
+rescue
   puts "You need to install my everyday-cli-utils gem version #{UTIL_VERSION} to use this script."
   exit 1
 end

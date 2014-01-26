@@ -40,7 +40,7 @@ class Perm
     if @length <= 0
       []
     else
-      recurse()
+      recurse
       @perms = @perms.sort
     end
   end

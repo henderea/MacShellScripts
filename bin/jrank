@@ -1,65 +1,57 @@
 #!/usr/bin/env ruby
 
-$LOAD_PATH << File.dirname(__FILE__)
-
 require 'optparse'
 require 'net/http'
 require 'yaml'
-require 'lib/maputil'
-require 'lib/option'
-require 'lib/format'
-require 'lib/mycurses'
+require 'rubygems'
+UTIL_VERSION = '>= 0.6.0'
+begin
+  gem 'everyday-cli-utils', UTIL_VERSION
+  require 'everyday-cli-utils'
+  include EverydayCliUtils
+  import :maputil, :format, :mycurses, :option
+rescue
+  puts "You need to install my everyday-cli-utils gem version #{UTIL_VERSION} to use this script."
+  exit 1
+end
 
-options = {
-    adjust_scores:     false,
-    show_both:         false,
-    update:            false,
-    update_interval:   60,
-    track_movement:    false,
-    clear_screen:      false,
-    show_diff:         false,
-    wait_on_change:    false,
-    notify_of_change:  false,
-    notify_sticky:     false,
-    continuous_update: false,
-    show_last_updated: false,
-    no_absolute_value: false,
-    show_rank_index:   false,
-    threshold:         [],
-    positive_negative: false,
-    mobile_number:     nil,
-}
+defaults_file   = File.expand_path('~/jrank-defaults.yaml')
+default_options = File.exist?(defaults_file) ? YAML::load_file(defaults_file) : { update_interval: 60 }
 
-defaults_file = File.expand_path('~/jrank-defaults.yaml')
-options       = YAML::load_file(defaults_file) if File.exist?(defaults_file)
-
-set_defaults  = false
+set_defaults = false
 
 #abcd   hi  lmnop rstuvw    1
 #    efg  jk     q      xyz0 23456789
 
-option_parser = OptionParser.new { |opts|
-  Option::add_option(options, opts, %w(-a --adjust-scores), :adjust_scores, toggle: true)
-  Option::add_option(options, opts, %w(-b --show-both), :show_both, toggle: true)
-  Option::add_option(options, opts, %w(-u --update), :update, toggle: true)
-  Option::add_option_with_param(options, opts, ['-i', '--update-interval INTERVAL'], :update_interval, type: Float)
-  Option::add_option(options, opts, %w(-t --track-movement), :track_movement, toggle: true)
-  Option::add_option(options, opts, %w(-c --clear-screen), :clear_screen, toggle: true)
-  Option::add_option(options, opts, %w(-d --show-diff), :show_diff, toggle: true)
-  Option::add_option(options, opts, %w(-w --wait-on-change), :wait_on_change, toggle: true)
-  Option::add_option(options, opts, %w(-n --notify-of-change), :notify_of_change, toggle: true)
-  Option::add_option(options, opts, %w(-s --notify-sticky), :notify_sticky, toggle: true)
-  Option::add_option(options, opts, %w(-o --continuous-update), :continuous_update, toggle: true)
-  Option::add_option(options, opts, %w(-l --show-last-updated), :show_last_updated, toggle: true)
-  Option::add_option(options, opts, %w(-v --no-absolute-value), :no_absolute_value, toggle: true)
-  Option::add_option(options, opts, %w(-r --show-rank-index), :show_rank_index, toggle: true)
-  Option::add_option_with_param(options, opts, ['-h', '--threshold THRESHOLD'], :threshold, append: true, type: Float)
-  Option::add_option(options, opts, %w(-p --positive-negative), :positive_negative, toggle: true)
-  Option::add_option_with_param(options, opts, ['-m', '--mobile-number NUMBER'], :mobile_number)
-  opts.on('-1', '--set-defaults') { set_defaults = true }
-}
+class MyOptions
+  extend OptionUtil
 
-option_parser.parse!
+  default_settings toggle: true, type: Float
+  option :adjust_scores, %w(-a --adjust-scores)
+  option :show_both, %w(-b --show-both)
+  option :update, %w(-u --update)
+  option_with_param :update_interval, ['-i', '--update-interval INTERVAL']
+  option :track_movement, %w(-t --track-movement)
+  option :clear_screen, %w(-c --clear-screen)
+  option :show_diff, %w(-d --show-diff)
+  option :wait_on_change, %w(-w --wait-on-change)
+  option :notify_of_change, %w(-n --notify-of-change)
+  option :notify_sticky, %w(-s --notify-sticky)
+  option :continuous_update, %w(-o --continuous-update)
+  option :show_last_updated, %w(-l --show-last-updated)
+  option :no_absolute_value, %w(-v --no-absolute-value)
+  option :show_rank_index, %w(-r --show-rank-index)
+  option_with_param :threshold, ['-h', '--threshold THRESHOLD'], append: true
+  option :positive_negative, %w(-p --positive-negative)
+end
+
+MyOptions.opts.on('-1', '--set-defaults') { set_defaults = true }
+
+MyOptions.default_options default_options
+
+MyOptions.parse!
+
+options = MyOptions.options
 
 if set_defaults
   IO.write(defaults_file, options.to_yaml)

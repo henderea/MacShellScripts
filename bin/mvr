@@ -1,25 +1,15 @@
 #!/usr/bin/env ruby
 
-#$LOAD_PATH << File.dirname(__FILE__)
-
 require 'optparse'
 require 'yaml'
 require 'rubygems'
-#begin
-#  require 'everyday-cli-utils'
-#  include EverydayCliUtils
-#  import :format, :option
-#rescue Exception => e
-#  puts 'You need to install my everyday-cli-utils gem to use this script.'
-#  exit 1
-#end
 UTIL_VERSION = '>= 0.4.0'
 begin
   gem 'everyday-cli-utils', UTIL_VERSION
   require 'everyday-cli-utils'
   include EverydayCliUtils
   import :format, :option
-rescue Exception => e
+rescue
   puts "You need to install my everyday-cli-utils gem version #{UTIL_VERSION} to use this script."
   exit 1
 end
