@@ -4,14 +4,23 @@ require 'optparse'
 require 'net/http'
 require 'yaml'
 require 'rubygems'
-UTIL_VERSION = '>= 0.7.0'
+UTIL_VERSION = '>= 1.1.0'
 begin
   gem 'everyday-cli-utils', UTIL_VERSION
   require 'everyday-cli-utils'
   include EverydayCliUtils
-  import :maputil, :format, :mycurses, :option
+  import :maputil, :format, :option
 rescue
   puts "You need to install my everyday-cli-utils gem version #{UTIL_VERSION} to use this script."
+  exit 1
+end
+
+begin
+  gem 'everyday-curses'
+  require 'everyday-curses'
+  include EverydayCurses
+rescue
+  puts 'You need to install my everyday-curses gem to use this script.'
   exit 1
 end
 
