@@ -1,0 +1,103 @@
+#!/usr/bin/env ruby
+
+Signal.trap('SIGINT') {
+    puts
+    puts
+    puts
+    exit 1
+}
+
+Signal.trap('EXIT') {
+    log 'Exiting'
+    exit 1
+}
+
+STDOUT.sync = true
+
+require 'optparse'
+require 'date'
+
+def get_free_mem
+    vm_stat = `vm_stat`
+
+    vm_stat = vm_stat.split("\n")
+
+    page_size = vm_stat[0].match(/(\d+) bytes/)[1].to_i
+
+    pages_free = vm_stat[1].match(/(\d+)/)[1].to_i
+    #pages_inactive = vm_stat[3].match(/(\d+)/)[1].to_i
+
+    page_size*pages_free #+ page_size*pages_inactive
+end
+
+def get_memory_pressure
+    `sysctl kern.memorystatus_vm_pressure_level`.chomp.to_i
+end
+
+def notify(msg, sticky = true)
+    `/usr/local/bin/growlnotify -n Terminal -a Terminal #{sticky ? ' -s' : ''} -m "#{msg}" -t "memory_tamer"`
+    log "Notification: #{msg}"
+end
+
+def free_mem(pressure)
+    cmp = get_memory_pressure
+    if cmp >= 4
+        notify 'Memory Pressure too high! Running not a good idea.'
+        return
+    end
+    dmp = pressure == 'normal' ? 1 : (pressure == 'warn' ? 2 : 4)
+    pressure = cmp == 1 ? 'warn' : 'critical' if cmp >= dmp
+    IO.popen("memory_pressure -l #{pressure}") { |pipe|
+        pipe.sync = true
+        pipe.each { |l|
+            puts l
+            if l.include?('CMD: Allocating pages')
+                Process.kill 'SIGINT', pipe.pid
+                break
+            end
+        }
+    }
+end
+
+def log(msg)
+    puts "[#{DateTime.now.strftime('%F %T %Z')}] #{msg}"
+end
+
+def format_bytes(bytes, show_raw = false)
+    "#{'%.1f' % (bytes / 1024**2)} MB#{show_raw ? " (#{bytes} B)" : ''}"
+end
+
+options = { pressure: 'warn', memory: 1024 }
+
+opts = OptionParser.new { |opts|
+    opts.on('-p PRESSURE') { |p| options[:pressure] = p }
+    opts.on('-m MEMORY', Integer) { |m| options[:memory] = m }
+}
+
+opts.parse!
+
+if !%w(normal warn critical).include?(options[:pressure])
+    notify 'Pressure option must be "normal", "warn", or "critical". Exiting'
+    exit 1
+end
+
+notify "Starting Up. pressure='#{options[:pressure]}' memory='#{options[:memory]}'", true
+
+dfm = options[:memory] * (1024**2)
+log "dfm = #{format_bytes(dfm, true)}"
+
+loop do
+    24.times {
+        cfm = get_free_mem
+        if cfm < dfm
+            notify 'Begining memory freeing'
+            free_mem(options[:pressure])
+            nfm = get_free_mem
+            notify "Finished freeing #{format_bytes(nfm - cfm)}"
+            log "Freed #{format_bytes(nfm - cfm, true)}"
+            sleep(55)
+        end
+        sleep(5)
+    }
+    log "cfm = #{format_bytes(get_free_mem, true)}"
+end

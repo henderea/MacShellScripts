@@ -1,0 +1,22 @@
+#!/usr/bin/env ruby
+
+require 'nokogiri'
+
+fname = ARGV.shift
+
+doc = Nokogiri::XML(File.open(fname))
+tests = doc.xpath('//testcase')
+
+data = []
+
+tests.each { |test|
+    data << {test: "#{test['classname']}.#{test['name']}", time: test['time'].to_f}
+}
+
+data = data.sort_by { |v| v[:time] }.reverse
+
+longest = data.map { |v| v[:time].to_s.length }.max
+
+data.each { |d|
+    puts "#{d[:time].to_s.ljust(longest)}  <=  #{d[:test]}"
+}
